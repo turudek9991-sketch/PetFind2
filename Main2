@@ -1,5 +1,5 @@
 -- ============================================================
--- GROW A GARDEN: PET FINDER MAIN V31 (FIXED)
+-- GROW A GARDEN: PET FINDER MAIN V31 (SUPER FIXED)
 -- 1 Window utama | 3 Tab: Auto Buy / Auto Hop / Live Server
 -- Tab Live Server membuka popup window terpisah (auto-refresh 5s)
 -- Warna: Monokrom elegan (hitam + putih + aksen putih/abu)
@@ -16,7 +16,7 @@ local LocalPlayer     = Players.LocalPlayer
 local PlayerGui       = LocalPlayer:WaitForChild("PlayerGui")
 
 -- ============================================================
--- KONFIGURASI
+-- KONFIGURASI & METADATA
 -- ============================================================
 local FirebaseURL  = "https://growagardenpetfinder-default-rtdb.asia-southeast1.firebasedatabase.app/"
 local ConfigFile   = "PetFinderMainV31.json"
@@ -28,13 +28,6 @@ local Config = {
     AutoHop = false,
 }
 
-local WildPetSpawnsFolder = nil
-local CekPetLokal
-local ScanWildPetSpawns
-
--- ============================================================
--- METADATA PET
--- ============================================================
 local PetMetadata = {
     Frog            = { Rarity = "Common",    Tier = 1 },
     Bunny           = { Rarity = "Common",    Tier = 1 },
@@ -110,7 +103,7 @@ end
 LoadConfig()
 
 -- ============================================================
--- ERROR OVERLAY REMOVER
+-- ERROR OVERLAY REMOVER & CLEANUP
 -- ============================================================
 GuiService.ErrorMessageChanged:Connect(function()
     task.wait(0.1)
@@ -121,9 +114,6 @@ GuiService.ErrorMessageChanged:Connect(function()
     end
 end)
 
--- ============================================================
--- GUI PARENT + CLEANUP
--- ============================================================
 local GuiParent = game:GetService("CoreGui")
 if not pcall(function() return GuiParent.Name end) then GuiParent = PlayerGui end
 
@@ -133,7 +123,7 @@ for _, n in ipairs({"PetFinderMainV31", "PetFinderLiveV31"}) do
 end
 
 -- ============================================================
--- HELPER: DRAG LOGIC
+-- UI HELPERS (DITARUH DI ATAS AGAR SIAP PAKAI)
 -- ============================================================
 local function MakeDraggable(frame, handle)
     local dragging = false
@@ -165,9 +155,6 @@ local function MakeDraggable(frame, handle)
     end)
 end
 
--- ============================================================
--- HELPER: TOGGLE SWITCH
--- ============================================================
 local function MakeToggle(parent, label, initVal, posY, callback)
     local Row = Instance.new("Frame", parent)
     Row.Size              = UDim2.new(1, -24, 0, 30)
@@ -218,9 +205,6 @@ local function MakeToggle(parent, label, initVal, posY, callback)
     return Row
 end
 
--- ============================================================
--- HELPER: DIVIDER
--- ============================================================
 local function MakeDivider(parent, posY)
     local D = Instance.new("Frame", parent)
     D.Size            = UDim2.new(1, -24, 0, 1)
@@ -230,8 +214,17 @@ local function MakeDivider(parent, posY)
     return D
 end
 
+local function AddToggleRow(parent, order, label, initVal, cb)
+    local Wrap = Instance.new("Frame", parent)
+    Wrap.LayoutOrder       = order
+    Wrap.Size              = UDim2.new(1, 0, 0, 36)
+    Wrap.BackgroundTransparency = 1
+    MakeToggle(Wrap, label, initVal, 3, cb)
+    return Wrap
+end
+
 -- ============================================================
--- ▐█ MAIN WINDOW
+-- ▐█ MAIN WINDOW CONTAINER
 -- ============================================================
 local MainSG = Instance.new("ScreenGui", GuiParent)
 MainSG.Name          = "PetFinderMainV31"
@@ -296,7 +289,6 @@ Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
 
 -- Tab Bar
 local TabW = 100
-
 local TabBar = Instance.new("ScrollingFrame", MainFrame)
 TabBar.Size              = UDim2.new(1, -24, 0, 28)
 TabBar.Position          = UDim2.new(0, 12, 0, 46)
@@ -338,7 +330,7 @@ Instance.new("UICorner", TabIndicator).CornerRadius = UDim.new(1, 0)
 
 MakeDivider(MainFrame, 80)
 
--- Content Container
+-- Content Holder
 local ContentHolder = Instance.new("Frame", MainFrame)
 ContentHolder.Size              = UDim2.new(1, 0, 1, -86)
 ContentHolder.Position          = UDim2.new(0, 0, 0, 86)
@@ -358,7 +350,7 @@ StatusBar.TextXAlignment  = Enum.TextXAlignment.Left
 
 MakeDraggable(MainFrame, TitleBar)
 
-minimized = false
+local minimized = false
 MinBtn.MouseButton1Click:Connect(function()
     minimized = not minimized
     TweenService:Create(MainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quart), {
@@ -371,7 +363,7 @@ MinBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- PAGE: AUTO BUY
+-- PAGE 1: AUTO BUY
 -- ============================================================
 local PageBuy = Instance.new("ScrollingFrame", ContentHolder)
 PageBuy.Size              = UDim2.new(1, 0, 1, -28)
@@ -396,15 +388,7 @@ BuyPad.LayoutOrder      = 0
 BuyPad.Size             = UDim2.new(1, 0, 0, 8)
 BuyPad.BackgroundTransparency = 1
 
-AddToggleRow = function(parent, order, label, initVal, cb)
-    local Wrap = Instance.new("Frame", parent)
-    Wrap.LayoutOrder       = order
-    Wrap.Size              = UDim2.new(1, 0, 0, 36)
-    Wrap.BackgroundTransparency = 1
-    MakeToggle(Wrap, label, initVal, 3, cb)
-    return Wrap
-end
-
+-- SEKARANG SUDAH AMAN DIPANGGIL KARENA ADDTOGGLEROW SUDAH ADA DI ATAS
 AddToggleRow(BuyInner, 1, "Auto Buy Aktif", Config.AutoBuy, function(v)
     Config.AutoBuy = v
     SaveConfig()
@@ -514,7 +498,7 @@ task.defer(function()
 end)
 
 -- ============================================================
--- PAGE: AUTO HOP
+-- PAGE 2: AUTO HOP
 -- ============================================================
 local PageHop = Instance.new("Frame", ContentHolder)
 PageHop.Size              = UDim2.new(1, 0, 1, -28)
@@ -582,7 +566,7 @@ HopInfoLbl.TextXAlignment = Enum.TextXAlignment.Left
 HopInfoLbl.TextWrapped   = true
 
 -- ============================================================
--- PAGE: LIVE SERVER
+-- PAGE 3: LIVE SERVER BUTTON PAGE
 -- ============================================================
 local PageLive = Instance.new("Frame", ContentHolder)
 PageLive.Size              = UDim2.new(1, 0, 1, -28)
@@ -651,10 +635,8 @@ end
 SwitchTab(1)
 
 -- ============================================================
--- ▐█ LIVE SERVER POPUP WINDOW FUNCTIONS (ORDER FIXED)
+-- ▐█ LIVE SERVER POPUP WINDOW FUNCTIONS (STABLE ORDER)
 -- ============================================================
-
--- DIPINDAHKAN KE ATAS AGAR DAPAT DIBACA OLEH REFRESH LOOP DI BUATLIVEWINDOW
 local function BuatEntryLive(LScroll, order, namaPet, jobId, sisaDetik, pCur, pMax)
     local meta   = PetMetadata[namaPet] or { Rarity = "Common", Tier = 1 }
     local rarCol = RarityColor[meta.Rarity] or C.TEXT_SEC
@@ -864,7 +846,7 @@ local function BuatLiveWindow()
 
     MakeDraggable(LFrame, LTitleBar)
 
-    -- Refresh loop
+    -- Refresh Loop Hooked
     task.spawn(function()
         while LiveWindowRef == LSG do
             for i = 5, 1, -1 do
@@ -976,9 +958,9 @@ OpenLiveBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- AUTO BUY HOOK: WildPetSpawns
+-- GAMEWORLD HOOK: AUTO BUY LOGIC
 -- ============================================================
-CekPetLokal = function(item)
+local function CekPetLokal(item)
     if not item or not item.Parent then return end
     if not Config.AutoBuy then return end
 
