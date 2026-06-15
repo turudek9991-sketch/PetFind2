@@ -1,5 +1,5 @@
 -- ============================================================
--- GROW A GARDEN: PET FINDER MAIN V31 (SUPER FIXED)
+-- GROW A GARDEN: PET FINDER MAIN V31
 -- 1 Window utama | 3 Tab: Auto Buy / Auto Hop / Live Server
 -- Tab Live Server membuka popup window terpisah (auto-refresh 5s)
 -- Warna: Monokrom elegan (hitam + putih + aksen putih/abu)
@@ -16,7 +16,7 @@ local LocalPlayer     = Players.LocalPlayer
 local PlayerGui       = LocalPlayer:WaitForChild("PlayerGui")
 
 -- ============================================================
--- KONFIGURASI & METADATA
+-- KONFIGURASI
 -- ============================================================
 local FirebaseURL  = "https://growagardenpetfinder-default-rtdb.asia-southeast1.firebasedatabase.app/"
 local ConfigFile   = "PetFinderMainV31.json"
@@ -28,6 +28,16 @@ local Config = {
     AutoHop = false,
 }
 
+-- Forward declaration: dipakai oleh toggle Auto Buy & toggle pet target
+-- agar saat diaktifkan langsung mengecek pet yang SUDAH ADA di WildPetSpawns
+-- (bukan hanya pet yang baru spawn lewat ChildAdded)
+local WildPetSpawnsFolder = nil
+local CekPetLokal
+local ScanWildPetSpawns
+
+-- ============================================================
+-- METADATA PET
+-- ============================================================
 local PetMetadata = {
     Frog            = { Rarity = "Common",    Tier = 1 },
     Bunny           = { Rarity = "Common",    Tier = 1 },
@@ -44,6 +54,7 @@ local PetMetadata = {
     IceSerpent      = { Rarity = "Super",     Tier = 6 },
 }
 
+-- Warna teks rarity (tetap monokrom, pakai shade abu berbeda)
 local RarityColor = {
     Common    = Color3.fromRGB(130, 130, 130),
     Uncommon  = Color3.fromRGB(170, 170, 170),
@@ -65,14 +76,14 @@ local HttpRequest = (syn and syn.request) or (http and http.request) or http_req
 -- PALET WARNA ELEGAN
 -- ============================================================
 local C = {
-    BG          = Color3.fromRGB(10,  10,  12),
-    BG2         = Color3.fromRGB(16,  16,  20),
-    BG3         = Color3.fromRGB(22,  22,  28),
-    BORDER      = Color3.fromRGB(38,  38,  48),
-    ACCENT      = Color3.fromRGB(255, 255, 255),
-    ACCENT_DIM  = Color3.fromRGB(160, 160, 170),
-    TEXT_PRI    = Color3.fromRGB(235, 235, 240),
-    TEXT_SEC    = Color3.fromRGB(100, 100, 115),
+    BG          = Color3.fromRGB(10,  10,  12),   -- background utama
+    BG2         = Color3.fromRGB(16,  16,  20),   -- kartu / sub-frame
+    BG3         = Color3.fromRGB(22,  22,  28),   -- hover / input
+    BORDER      = Color3.fromRGB(38,  38,  48),   -- border halus
+    ACCENT      = Color3.fromRGB(255, 255, 255),  -- putih murni = aksen utama
+    ACCENT_DIM  = Color3.fromRGB(160, 160, 170),  -- teks sekunder
+    TEXT_PRI    = Color3.fromRGB(235, 235, 240),  -- teks primer
+    TEXT_SEC    = Color3.fromRGB(100, 100, 115),  -- teks tersier
     TAB_ACTIVE  = Color3.fromRGB(255, 255, 255),
     TAB_IDLE    = Color3.fromRGB(70,  70,  85),
     TOGGLE_ON   = Color3.fromRGB(255, 255, 255),
@@ -103,7 +114,7 @@ end
 LoadConfig()
 
 -- ============================================================
--- ERROR OVERLAY REMOVER & CLEANUP
+-- ERROR OVERLAY REMOVER
 -- ============================================================
 GuiService.ErrorMessageChanged:Connect(function()
     task.wait(0.1)
@@ -114,6 +125,9 @@ GuiService.ErrorMessageChanged:Connect(function()
     end
 end)
 
+-- ============================================================
+-- GUI PARENT + CLEANUP
+-- ============================================================
 local GuiParent = game:GetService("CoreGui")
 if not pcall(function() return GuiParent.Name end) then GuiParent = PlayerGui end
 
@@ -123,7 +137,7 @@ for _, n in ipairs({"PetFinderMainV31", "PetFinderLiveV31"}) do
 end
 
 -- ============================================================
--- UI HELPERS (DITARUH DI ATAS AGAR SIAP PAKAI)
+-- HELPER: DRAG LOGIC
 -- ============================================================
 local function MakeDraggable(frame, handle)
     local dragging = false
@@ -155,6 +169,9 @@ local function MakeDraggable(frame, handle)
     end)
 end
 
+-- ============================================================
+-- HELPER: TOGGLE SWITCH (monokrom)
+-- ============================================================
 local function MakeToggle(parent, label, initVal, posY, callback)
     local Row = Instance.new("Frame", parent)
     Row.Size              = UDim2.new(1, -24, 0, 30)
@@ -205,6 +222,9 @@ local function MakeToggle(parent, label, initVal, posY, callback)
     return Row
 end
 
+-- ============================================================
+-- HELPER: DIVIDER
+-- ============================================================
 local function MakeDivider(parent, posY)
     local D = Instance.new("Frame", parent)
     D.Size            = UDim2.new(1, -24, 0, 1)
@@ -214,17 +234,8 @@ local function MakeDivider(parent, posY)
     return D
 end
 
-local function AddToggleRow(parent, order, label, initVal, cb)
-    local Wrap = Instance.new("Frame", parent)
-    Wrap.LayoutOrder       = order
-    Wrap.Size              = UDim2.new(1, 0, 0, 36)
-    Wrap.BackgroundTransparency = 1
-    MakeToggle(Wrap, label, initVal, 3, cb)
-    return Wrap
-end
-
 -- ============================================================
--- ▐█ MAIN WINDOW CONTAINER
+-- ▐█ MAIN WINDOW
 -- ============================================================
 local MainSG = Instance.new("ScreenGui", GuiParent)
 MainSG.Name          = "PetFinderMainV31"
@@ -246,13 +257,14 @@ local MainStroke = Instance.new("UIStroke", MainFrame)
 MainStroke.Color     = C.BORDER
 MainStroke.Thickness = 1
 
--- Title Bar
+-- ── Title Bar ──────────────────────────────────────────────
 local TitleBar = Instance.new("Frame", MainFrame)
 TitleBar.Size             = UDim2.new(1, 0, 0, 40)
 TitleBar.BackgroundColor3 = C.BG2
 TitleBar.BorderSizePixel  = 0
 Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 12)
 
+-- cover rounded bottom of titlebar
 local TitleBarFix = Instance.new("Frame", TitleBar)
 TitleBarFix.Size            = UDim2.new(1, 0, 0, 12)
 TitleBarFix.Position        = UDim2.new(0, 0, 1, -12)
@@ -276,6 +288,7 @@ TitleLbl.Font             = Enum.Font.GothamBold
 TitleLbl.TextSize         = 13
 TitleLbl.TextXAlignment   = Enum.TextXAlignment.Left
 
+-- Minimize button
 local MinBtn = Instance.new("TextButton", TitleBar)
 MinBtn.Size             = UDim2.new(0, 24, 0, 24)
 MinBtn.Position         = UDim2.new(1, -32, 0.5, -12)
@@ -287,19 +300,12 @@ MinBtn.TextSize         = 14
 MinBtn.BorderSizePixel  = 0
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
 
--- Tab Bar
-local TabW = 100
-local TabBar = Instance.new("ScrollingFrame", MainFrame)
-TabBar.Size              = UDim2.new(1, -24, 0, 28)
-TabBar.Position          = UDim2.new(0, 12, 0, 46)
-TabBar.BackgroundColor3  = C.BG2
-TabBar.BorderSizePixel   = 0
-TabBar.ClipsDescendants  = true
-TabBar.ScrollingDirection = Enum.ScrollingDirection.X
-TabBar.ScrollBarThickness = 3
-TabBar.ScrollBarImageColor3 = C.BORDER
-TabBar.CanvasSize         = UDim2.new(0, 0, 0, 0)
-TabBar.AutomaticCanvasSize = Enum.AutomaticCanvasSize.X
+-- ── Tab Bar (GANTI BAGIAN INI DI SCRIPT 1073 LINES MU) ──────────────────────
+local TabBar = Instance.new("Frame", MainFrame)
+TabBar.Size             = UDim2.new(1, -24, 0, 28)
+TabBar.Position         = UDim2.new(0, 12, 0, 46)
+TabBar.BackgroundColor3 = C.BG2
+TabBar.BorderSizePixel  = 0
 Instance.new("UICorner", TabBar).CornerRadius = UDim.new(0, 8)
 
 local TabLayout = Instance.new("UIListLayout", TabBar)
@@ -308,36 +314,39 @@ TabLayout.SortOrder     = Enum.SortOrder.LayoutOrder
 
 local tabNames = {"AUTO BUY", "AUTO HOP", "LIVE SERVER"}
 local TabBtns   = {}
+local tabW      = (W - 24) / 3 -- Perhitungan jarak tetap 92px per tab
 
 for i, name in ipairs(tabNames) do
     local Tb = Instance.new("TextButton", TabBar)
     Tb.LayoutOrder       = i
-    Tb.Size              = UDim2.new(0, TabW, 1, 0)
+    Tb.Size              = UDim2.new(0, tabW, 1, 0)
     Tb.BackgroundTransparency = 1
     Tb.Text              = name
     Tb.TextColor3        = C.TAB_IDLE
     Tb.Font              = Enum.Font.GothamBold
-    Tb.TextSize          = 9
+    Tb.TextSize          = 8.5 -- Dikecilkan sedikit agar "LIVE SERVER" muat rapi
     TabBtns[i]           = Tb
 end
 
+-- Tab indicator underline
 local TabIndicator = Instance.new("Frame", TabBar)
-TabIndicator.Size            = UDim2.new(0, TabW - 16, 0, 2)
+TabIndicator.Size            = UDim2.new(0, tabW - 16, 0, 2)
 TabIndicator.Position        = UDim2.new(0, 8, 1, -2)
 TabIndicator.BackgroundColor3 = C.ACCENT
 TabIndicator.BorderSizePixel  = 0
 Instance.new("UICorner", TabIndicator).CornerRadius = UDim.new(1, 0)
 
+-- Divider bawah tab bar
 MakeDivider(MainFrame, 80)
 
--- Content Holder
+-- ── Content Container ──────────────────────────────────────
 local ContentHolder = Instance.new("Frame", MainFrame)
 ContentHolder.Size              = UDim2.new(1, 0, 1, -86)
 ContentHolder.Position          = UDim2.new(0, 0, 0, 86)
 ContentHolder.BackgroundTransparency = 1
 ContentHolder.ClipsDescendants  = true
 
--- Status Bar
+-- ── Status bar bawah ───────────────────────────────────────
 local StatusBar = Instance.new("TextLabel", MainFrame)
 StatusBar.Size            = UDim2.new(1, -24, 0, 18)
 StatusBar.Position        = UDim2.new(0, 12, 1, -22)
@@ -350,6 +359,7 @@ StatusBar.TextXAlignment  = Enum.TextXAlignment.Left
 
 MakeDraggable(MainFrame, TitleBar)
 
+-- Minimize logic
 local minimized = false
 MinBtn.MouseButton1Click:Connect(function()
     minimized = not minimized
@@ -363,7 +373,7 @@ MinBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- PAGE 1: AUTO BUY
+-- PAGE: AUTO BUY
 -- ============================================================
 local PageBuy = Instance.new("ScrollingFrame", ContentHolder)
 PageBuy.Size              = UDim2.new(1, 0, 1, -28)
@@ -383,18 +393,29 @@ local BuyLayout = Instance.new("UIListLayout", BuyInner)
 BuyLayout.SortOrder  = Enum.SortOrder.LayoutOrder
 BuyLayout.Padding    = UDim.new(0, 0)
 
+-- Padding atas
 local BuyPad = Instance.new("Frame", BuyInner)
 BuyPad.LayoutOrder      = 0
 BuyPad.Size             = UDim2.new(1, 0, 0, 8)
 BuyPad.BackgroundTransparency = 1
 
--- SEKARANG SUDAH AMAN DIPANGGIL KARENA ADDTOGGLEROW SUDAH ADA DI ATAS
+-- Toggle Auto Buy
+local function AddToggleRow(parent, order, label, initVal, cb)
+    local Wrap = Instance.new("Frame", parent)
+    Wrap.LayoutOrder       = order
+    Wrap.Size              = UDim2.new(1, 0, 0, 36)
+    Wrap.BackgroundTransparency = 1
+    MakeToggle(Wrap, label, initVal, 3, cb)
+    return Wrap
+end
+
 AddToggleRow(BuyInner, 1, "Auto Buy Aktif", Config.AutoBuy, function(v)
     Config.AutoBuy = v
     SaveConfig()
     StatusBar.Text = v and "Auto Buy: AKTIF — menunggu pet..." or "Auto Buy: Nonaktif"
 end)
 
+-- Divider
 local BuyDiv1 = Instance.new("Frame", BuyInner)
 BuyDiv1.LayoutOrder     = 2
 BuyDiv1.Size            = UDim2.new(1, -24, 0, 1)
@@ -404,6 +425,7 @@ local BuyDiv1Pad = Instance.new("UIPadding", BuyDiv1)
 BuyDiv1Pad.PaddingLeft  = UDim.new(0, 12)
 BuyDiv1Pad.PaddingRight = UDim.new(0, 12)
 
+-- Section label
 local BuySecLabel = Instance.new("Frame", BuyInner)
 BuySecLabel.LayoutOrder = 3
 BuySecLabel.Size        = UDim2.new(1, 0, 0, 28)
@@ -419,6 +441,7 @@ BuySecTxt.Font         = Enum.Font.GothamBold
 BuySecTxt.TextSize     = 9
 BuySecTxt.TextXAlignment = Enum.TextXAlignment.Left
 
+-- Daftar pet
 for idx, namaPet in ipairs(ListSemuaPet) do
     local meta    = PetMetadata[namaPet] or { Rarity = "Common", Tier = 1 }
     local rarCol  = RarityColor[meta.Rarity] or C.TEXT_SEC
@@ -442,6 +465,7 @@ for idx, namaPet in ipairs(ListSemuaPet) do
     RowStroke.Color     = isActive and C.ACCENT or C.BORDER
     RowStroke.Thickness = 1
 
+    -- Nama pet
     local NLbl = Instance.new("TextLabel", Row)
     NLbl.Size          = UDim2.new(0, 140, 1, 0)
     NLbl.Position      = UDim2.new(0, 12, 0, 0)
@@ -452,6 +476,7 @@ for idx, namaPet in ipairs(ListSemuaPet) do
     NLbl.TextSize      = 11
     NLbl.TextXAlignment = Enum.TextXAlignment.Left
 
+    -- Rarity
     local RLbl = Instance.new("TextLabel", Row)
     RLbl.Size          = UDim2.new(0, 80, 1, 0)
     RLbl.Position      = UDim2.new(1, -110, 0, 0)
@@ -462,6 +487,7 @@ for idx, namaPet in ipairs(ListSemuaPet) do
     RLbl.TextSize      = 10
     RLbl.TextXAlignment = Enum.TextXAlignment.Right
 
+    -- Checkmark
     local ChkLbl = Instance.new("TextLabel", Row)
     ChkLbl.Size          = UDim2.new(0, 20, 1, 0)
     ChkLbl.Position      = UDim2.new(1, -24, 0, 0)
@@ -493,12 +519,13 @@ for idx, namaPet in ipairs(ListSemuaPet) do
     end)
 end
 
+-- Update canvas size setelah layout selesai
 task.defer(function()
     PageBuy.CanvasSize = UDim2.new(0, 0, 0, BuyLayout.AbsoluteContentSize.Y + 12)
 end)
 
 -- ============================================================
--- PAGE 2: AUTO HOP
+-- PAGE: AUTO HOP
 -- ============================================================
 local PageHop = Instance.new("Frame", ContentHolder)
 PageHop.Size              = UDim2.new(1, 0, 1, -28)
@@ -506,6 +533,7 @@ PageHop.Position          = UDim2.new(0, 0, 0, 0)
 PageHop.BackgroundTransparency = 1
 PageHop.Visible           = false
 
+-- Toggle Auto Hop
 MakeToggle(PageHop, "Auto Hop Aktif", Config.AutoHop, 12, function(v)
     Config.AutoHop = v
     SaveConfig()
@@ -514,6 +542,7 @@ end)
 
 MakeDivider(PageHop, 50)
 
+-- Info box tier
 local TierBox = Instance.new("Frame", PageHop)
 TierBox.Size            = UDim2.new(1, -24, 0, 120)
 TierBox.Position        = UDim2.new(0, 12, 0, 58)
@@ -554,6 +583,7 @@ end
 
 MakeDivider(PageHop, 192)
 
+-- Info tambahan
 local HopInfoLbl = Instance.new("TextLabel", PageHop)
 HopInfoLbl.Size          = UDim2.new(1, -24, 0, 60)
 HopInfoLbl.Position      = UDim2.new(0, 12, 0, 202)
@@ -566,7 +596,7 @@ HopInfoLbl.TextXAlignment = Enum.TextXAlignment.Left
 HopInfoLbl.TextWrapped   = true
 
 -- ============================================================
--- PAGE 3: LIVE SERVER BUTTON PAGE
+-- PAGE: LIVE SERVER (hanya tombol toggle popup)
 -- ============================================================
 local PageLive = Instance.new("Frame", ContentHolder)
 PageLive.Size              = UDim2.new(1, 0, 1, -28)
@@ -635,108 +665,8 @@ end
 SwitchTab(1)
 
 -- ============================================================
--- ▐█ LIVE SERVER POPUP WINDOW FUNCTIONS (STABLE ORDER)
+-- ▐█ LIVE SERVER POPUP WINDOW
 -- ============================================================
-local function BuatEntryLive(LScroll, order, namaPet, jobId, sisaDetik, pCur, pMax)
-    local meta   = PetMetadata[namaPet] or { Rarity = "Common", Tier = 1 }
-    local rarCol = RarityColor[meta.Rarity] or C.TEXT_SEC
-    local isFull = (pCur >= pMax)
-    local isHere = (jobId == game.JobId)
-
-    local Card = Instance.new("Frame", LScroll)
-    Card.LayoutOrder      = order
-    Card.Size             = UDim2.new(1, -10, 0, 62)
-    Card.BackgroundColor3 = C.BG2
-    Card.BorderSizePixel  = 0
-    Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 8)
-
-    local CardStroke = Instance.new("UIStroke", Card)
-    CardStroke.Color     = C.BORDER
-    CardStroke.Thickness = 1
-
-    local Strip = Instance.new("Frame", Card)
-    Strip.Size            = UDim2.new(0, 2, 1, -14)
-    Strip.Position        = UDim2.new(0, 6, 0, 7)
-    Strip.BackgroundColor3 = isFull and C.TEXT_SEC or C.ACCENT
-    Strip.BorderSizePixel  = 0
-    Instance.new("UICorner", Strip).CornerRadius = UDim.new(1, 0)
-
-    local NLbl = Instance.new("TextLabel", Card)
-    NLbl.Size          = UDim2.new(0, 140, 0, 20)
-    NLbl.Position      = UDim2.new(0, 18, 0, 8)
-    NLbl.BackgroundTransparency = 1
-    NLbl.Text          = namaPet
-    NLbl.TextColor3    = isFull and C.TEXT_SEC or C.TEXT_PRI
-    NLbl.Font          = Enum.Font.GothamBold
-    NLbl.TextSize      = 12
-    NLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-    local RLbl = Instance.new("TextLabel", Card)
-    RLbl.Size          = UDim2.new(0, 90, 0, 20)
-    RLbl.Position      = UDim2.new(1, -96, 0, 8)
-    RLbl.BackgroundTransparency = 1
-    RLbl.Text          = meta.Rarity
-    RLbl.TextColor3    = isFull and C.TEXT_SEC or rarCol
-    RLbl.Font          = Enum.Font.GothamBold
-    RLbl.TextSize      = 10
-    RLbl.TextXAlignment = Enum.TextXAlignment.Right
-
-    local m = math.floor(sisaDetik / 60)
-    local s = sisaDetik % 60
-    local playerText = isFull and (pCur .. "/" .. pMax .. "  PENUH") or (pCur .. "/" .. pMax .. " pemain")
-    local tagText    = isHere and "  [SERVER INI]" or ""
-
-    local Sub1 = Instance.new("TextLabel", Card)
-    Sub1.Size          = UDim2.new(1, -20, 0, 14)
-    Sub1.Position      = UDim2.new(0, 18, 0, 28)
-    Sub1.BackgroundTransparency = 1
-    Sub1.Text          = string.sub(jobId, 1, 10) .. "…" .. tagText .. "   " .. playerText
-    Sub1.TextColor3    = C.TEXT_SEC
-    Sub1.Font          = Enum.Font.GothamMedium
-    Sub1.TextSize      = 9
-    Sub1.TextXAlignment = Enum.TextXAlignment.Left
-
-    local Sub2 = Instance.new("TextLabel", Card)
-    Sub2.Size          = UDim2.new(1, -20, 0, 14)
-    Sub2.Position      = UDim2.new(0, 18, 0, 42)
-    Sub2.BackgroundTransparency = 1
-    Sub2.Text          = "Despawn dalam " .. string.format("%dm %02ds", m, s)
-    Sub2.TextColor3    = sisaDetik < 60 and C.DANGER or C.TEXT_SEC
-    Sub2.Font          = Enum.Font.GothamMedium
-    Sub2.TextSize      = 9
-    Sub2.TextXAlignment = Enum.TextXAlignment.Left
-
-    local ClickBtn = Instance.new("TextButton", Card)
-    ClickBtn.Size             = UDim2.new(1, 0, 1, 0)
-    ClickBtn.BackgroundTransparency = 1
-    ClickBtn.Text             = ""
-
-    ClickBtn.MouseButton1Click:Connect(function()
-        if isHere then
-            StatusBar.Text = "Kamu sudah di server ini."
-            return
-        end
-        if isFull then
-            StatusBar.Text = "Server penuh, pilih yang lain."
-            return
-        end
-        StatusBar.Text = "Joining " .. string.sub(jobId,1,8) .. "…"
-        NLbl.Text = "Joining..."
-        pcall(function()
-            TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, LocalPlayer)
-        end)
-    end)
-
-    ClickBtn.MouseEnter:Connect(function()
-        if not isFull and not isHere then
-            TweenService:Create(Card, TweenInfo.new(0.1), { BackgroundColor3 = C.BG3 }):Play()
-        end
-    end)
-    ClickBtn.MouseLeave:Connect(function()
-        TweenService:Create(Card, TweenInfo.new(0.1), { BackgroundColor3 = C.BG2 }):Play()
-    end)
-end
-
 local function BuatLiveWindow()
     if LiveWindowRef then
         local old = GuiParent:FindFirstChild("PetFinderLiveV31")
@@ -761,6 +691,7 @@ local function BuatLiveWindow()
     Instance.new("UICorner", LFrame).CornerRadius = UDim.new(0, 12)
     Instance.new("UIStroke", LFrame).Color = C.BORDER
 
+    -- Title bar
     local LTitleBar = Instance.new("Frame", LFrame)
     LTitleBar.Size            = UDim2.new(1, 0, 0, 40)
     LTitleBar.BackgroundColor3 = C.BG2
@@ -790,6 +721,7 @@ local function BuatLiveWindow()
     LTitleLbl.TextSize       = 13
     LTitleLbl.TextXAlignment = Enum.TextXAlignment.Left
 
+    -- Refresh timer label
     local RefreshLbl = Instance.new("TextLabel", LTitleBar)
     RefreshLbl.Size          = UDim2.new(0, 80, 1, 0)
     RefreshLbl.Position      = UDim2.new(1, -118, 0, 0)
@@ -800,6 +732,7 @@ local function BuatLiveWindow()
     RefreshLbl.TextSize      = 9
     RefreshLbl.TextXAlignment = Enum.TextXAlignment.Right
 
+    -- Close button
     local CloseBtn = Instance.new("TextButton", LTitleBar)
     CloseBtn.Size            = UDim2.new(0, 24, 0, 24)
     CloseBtn.Position        = UDim2.new(1, -32, 0.5, -12)
@@ -820,6 +753,7 @@ local function BuatLiveWindow()
 
     MakeDivider(LFrame, 40)
 
+    -- Scroll list
     local LScroll = Instance.new("ScrollingFrame", LFrame)
     LScroll.Size              = UDim2.new(1, -10, 1, -50)
     LScroll.Position          = UDim2.new(0, 5, 0, 46)
@@ -833,6 +767,7 @@ local function BuatLiveWindow()
     LLayout.SortOrder = Enum.SortOrder.LayoutOrder
     LLayout.Padding   = UDim.new(0, 4)
 
+    -- Placeholder
     local LPlaceholder = Instance.new("TextLabel", LScroll)
     LPlaceholder.Size          = UDim2.new(1, 0, 0, 80)
     LPlaceholder.BackgroundTransparency = 1
@@ -846,9 +781,117 @@ local function BuatLiveWindow()
 
     MakeDraggable(LFrame, LTitleBar)
 
-    -- Refresh Loop Hooked
+    -- ── Render entry ───────────────────────────────────────
+    local function BuatEntryLive(order, namaPet, jobId, sisaDetik, pCur, pMax)
+        local meta   = PetMetadata[namaPet] or { Rarity = "Common", Tier = 1 }
+        local rarCol = RarityColor[meta.Rarity] or C.TEXT_SEC
+        local isFull = (pCur >= pMax)
+        local isHere = (jobId == game.JobId)
+
+        local Card = Instance.new("Frame", LScroll)
+        Card.LayoutOrder      = order
+        Card.Size             = UDim2.new(1, -10, 0, 62)
+        Card.BackgroundColor3 = C.BG2
+        Card.BorderSizePixel  = 0
+        Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 8)
+
+        local CardStroke = Instance.new("UIStroke", Card)
+        CardStroke.Color     = isFull and C.BORDER or C.BORDER
+        CardStroke.Thickness = 1
+
+        -- Accent strip kiri
+        local Strip = Instance.new("Frame", Card)
+        Strip.Size            = UDim2.new(0, 2, 1, -14)
+        Strip.Position        = UDim2.new(0, 6, 0, 7)
+        Strip.BackgroundColor3 = isFull and C.TEXT_SEC or C.ACCENT
+        Strip.BorderSizePixel  = 0
+        Instance.new("UICorner", Strip).CornerRadius = UDim.new(1, 0)
+
+        -- Nama + rarity
+        local NLbl = Instance.new("TextLabel", Card)
+        NLbl.Size          = UDim2.new(0, 140, 0, 20)
+        NLbl.Position      = UDim2.new(0, 18, 0, 8)
+        NLbl.BackgroundTransparency = 1
+        NLbl.Text          = namaPet
+        NLbl.TextColor3    = isFull and C.TEXT_SEC or C.TEXT_PRI
+        NLbl.Font          = Enum.Font.GothamBold
+        NLbl.TextSize      = 12
+        NLbl.TextXAlignment = Enum.TextXAlignment.Left
+
+        local RLbl = Instance.new("TextLabel", Card)
+        RLbl.Size          = UDim2.new(0, 90, 0, 20)
+        RLbl.Position      = UDim2.new(1, -96, 0, 8)
+        RLbl.BackgroundTransparency = 1
+        RLbl.Text          = meta.Rarity
+        RLbl.TextColor3    = isFull and C.TEXT_SEC or rarCol
+        RLbl.Font          = Enum.Font.GothamBold
+        RLbl.TextSize      = 10
+        RLbl.TextXAlignment = Enum.TextXAlignment.Right
+
+        -- Sub baris 1: job id + player
+        local m = math.floor(sisaDetik / 60)
+        local s = sisaDetik % 60
+        local playerText = isFull and (pCur .. "/" .. pMax .. "  PENUH") or (pCur .. "/" .. pMax .. " pemain")
+        local tagText    = isHere and "  [SERVER INI]" or ""
+
+        local Sub1 = Instance.new("TextLabel", Card)
+        Sub1.Size          = UDim2.new(1, -20, 0, 14)
+        Sub1.Position      = UDim2.new(0, 18, 0, 28)
+        Sub1.BackgroundTransparency = 1
+        Sub1.Text          = string.sub(jobId, 1, 10) .. "…" .. tagText .. "   " .. playerText
+        Sub1.TextColor3    = C.TEXT_SEC
+        Sub1.Font          = Enum.Font.GothamMedium
+        Sub1.TextSize      = 9
+        Sub1.TextXAlignment = Enum.TextXAlignment.Left
+
+        -- Sub baris 2: despawn
+        local Sub2 = Instance.new("TextLabel", Card)
+        Sub2.Size          = UDim2.new(1, -20, 0, 14)
+        Sub2.Position      = UDim2.new(0, 18, 0, 42)
+        Sub2.BackgroundTransparency = 1
+        Sub2.Text          = "Despawn dalam " .. string.format("%dm %02ds", m, s)
+        Sub2.TextColor3    = sisaDetik < 60 and C.DANGER or C.TEXT_SEC
+        Sub2.Font          = Enum.Font.GothamMedium
+        Sub2.TextSize      = 9
+        Sub2.TextXAlignment = Enum.TextXAlignment.Left
+
+        -- Klik join
+        local ClickBtn = Instance.new("TextButton", Card)
+        ClickBtn.Size             = UDim2.new(1, 0, 1, 0)
+        ClickBtn.BackgroundTransparency = 1
+        ClickBtn.Text             = ""
+
+        ClickBtn.MouseButton1Click:Connect(function()
+            if isHere then
+                StatusBar.Text = "Kamu sudah di server ini."
+                return
+            end
+            if isFull then
+                StatusBar.Text = "Server penuh, pilih yang lain."
+                return
+            end
+            StatusBar.Text = "Joining " .. string.sub(jobId,1,8) .. "…"
+            LTitleLbl.Text = "Joining..."
+            pcall(function()
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, LocalPlayer)
+            end)
+        end)
+
+        ClickBtn.MouseEnter:Connect(function()
+            if not isFull and not isHere then
+                TweenService:Create(Card, TweenInfo.new(0.1), { BackgroundColor3 = C.BG3 }):Play()
+            end
+        end)
+        ClickBtn.MouseLeave:Connect(function()
+            TweenService:Create(Card, TweenInfo.new(0.1), { BackgroundColor3 = C.BG2 }):Play()
+        end)
+    end
+
+    -- ── Refresh loop ───────────────────────────────────────
+    local countdown = 5
     task.spawn(function()
         while LiveWindowRef == LSG do
+            -- Countdown display
             for i = 5, 1, -1 do
                 if LiveWindowRef ~= LSG then break end
                 RefreshLbl.Text = "refresh " .. i .. "s"
@@ -899,11 +942,13 @@ local function BuatLiveWindow()
                         end
                     end
 
+                    -- Sort tier tertinggi dulu
                     table.sort(entries, function(a, b)
                         if a.Tier ~= b.Tier then return a.Tier > b.Tier end
                         return a.SisaDetik > b.SisaDetik
                     end)
 
+                    -- Clear list
                     for _, ch in ipairs(LScroll:GetChildren()) do
                         if ch:IsA("Frame") then ch:Destroy() end
                     end
@@ -914,13 +959,12 @@ local function BuatLiveWindow()
                     else
                         LPlaceholder.Visible = false
                         for i, entry in ipairs(entries) do
-                            BuatEntryLive(LScroll, i, entry.PetName, entry.JobId, entry.SisaDetik, entry.PCur, entry.PMax)
+                            BuatEntryLive(i, entry.PetName, entry.JobId, entry.SisaDetik, entry.PCur, entry.PMax)
                         end
-                        task.defer(function()
-                            LScroll.CanvasSize = UDim2.new(0, 0, 0, LLayout.AbsoluteContentSize.Y + 8)
-                        end)
+                        LScroll.CanvasSize = UDim2.new(0, 0, 0, LLayout.AbsoluteContentSize.Y + 8)
                     end
 
+                    -- Auto Hop
                     if Config.AutoHop and #entries > 0 then
                         for _, entry in ipairs(entries) do
                             if entry.JobId ~= game.JobId and entry.PCur < entry.PMax then
@@ -943,6 +987,7 @@ local function BuatLiveWindow()
     return LSG
 end
 
+-- Tombol buka/tutup live window
 OpenLiveBtn.MouseButton1Click:Connect(function()
     liveWindowOpen = not liveWindowOpen
     if liveWindowOpen then
@@ -958,7 +1003,7 @@ OpenLiveBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- GAMEWORLD HOOK: AUTO BUY LOGIC
+-- AUTO BUY HOOK: WildPetSpawns
 -- ============================================================
 local function CekPetLokal(item)
     if not item or not item.Parent then return end
