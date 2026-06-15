@@ -1,5 +1,5 @@
 -- ============================================================
--- GROW A GARDEN: PET FINDER MAIN V31 (PERBAIKAN TOTAL)
+-- GROW A GARDEN: PET FINDER MAIN V31 (FIXED STRUCTURE)
 -- 1 Window utama | 3 Tab: Auto Buy / Auto Hop / Live Server
 -- Tab Live Server membuka popup window terpisah (auto-refresh 5s)
 -- Warna: Monokrom elegan (hitam + putih + aksen putih/abu)
@@ -580,7 +580,7 @@ HopInfoLbl.TextXAlignment = Enum.TextXAlignment.Left
 HopInfoLbl.TextWrapped   = true
 
 -- ============================================================
--- PAGE: LIVE SERVER (hanya tombol toggle popup)
+-- PAGE: LIVE SERVER
 -- ============================================================
 local PageLive = Instance.new("Frame", ContentHolder)
 PageLive.Size              = UDim2.new(1, 0, 1, -28)
@@ -623,10 +623,36 @@ OpenLiveBtn.MouseLeave:Connect(function()
 end)
 
 -- ============================================================
--- ▐█ LIVE SERVER POPUP WINDOW (SINTAKSIS SELESAI DIPERBAIKI)
+-- TAB SWITCH LOGIC
+-- ============================================================
+local pages   = { PageBuy, PageHop, PageLive }
+local curTab  = 1
+local tabW    = (W - 24) / 3
+
+local function SwitchTab(idx)
+    curTab = idx
+    for i, page in ipairs(pages) do
+        page.Visible = (i == idx)
+        TabBtns[i].TextColor3 = (i == idx) and C.TAB_ACTIVE or C.TAB_IDLE
+    end
+    TweenService:Create(TabIndicator, TweenInfo.new(0.18, Enum.EasingStyle.Quart), {
+        Position = UDim2.new(0, 8 + (idx - 1) * tabW, 1, -2)
+    }):Play()
+end
+
+for i, btn in ipairs(TabBtns) do
+    btn.MouseButton1Click:Connect(function()
+        SwitchTab(i)
+    end)
+end
+
+SwitchTab(1)
+
+-- ============================================================
+-- ▐█ LIVE SERVER POPUP WINDOW FUNCTIONS (STRUKTUR DEKLARASI TETAP AMAN)
 -- ============================================================
 
--- [1] FUNGSI ENTRY LIVE SEKARANG BERDIRI MANDIRI DI LUAR (TIDAK TERJEBAK LAGI)
+-- [1] RENDER BARIS ENTRY DATA SERVER (DI-EVALUASI KELUAR AGAR TERISOLASI)
 local function BuatEntryLive(LScroll, order, namaPet, jobId, sisaDetik, pCur, pMax)
     local meta   = PetMetadata[namaPet] or { Rarity = "Common", Tier = 1 }
     local rarCol = RarityColor[meta.Rarity] or C.TEXT_SEC
@@ -727,9 +753,9 @@ local function BuatEntryLive(LScroll, order, namaPet, jobId, sisaDetik, pCur, pM
             if not sukses then
                 warn("Teleport Gagal: ", err)
                 StatusBar.Text = "Gagal join! Mencoba reset dalam 3 detik..."
-                task.wait(3)
+                task.wait(3) 
                 sedangTeleport = false
-                NLbl.Text = namaPet
+                NLbl.Text = namaPet 
                 StatusBar.Text = "Pet Finder V31  ·  Ready"
             else
                 task.delay(10, function() sedangTeleport = false end)
@@ -738,8 +764,8 @@ local function BuatEntryLive(LScroll, order, namaPet, jobId, sisaDetik, pCur, pM
     end)
 end
 
--- [2] FUNGSI UTAMA MEMBUKA JENDELA POPUP (RE-STRUCTURED)
-function BuatLiveWindow()
+-- [2] MAIN POPUP WINDOW MAKER
+local function BuatLiveWindow()
     if LiveWindowRef then
         local old = GuiParent:FindFirstChild("PetFinderLiveV31")
         if old then old:Destroy() end
@@ -766,26 +792,51 @@ function BuatLiveWindow()
     local LTitleBar = Instance.new("Frame", LFrame)
     LTitleBar.Size            = UDim2.new(1, 0, 0, 40)
     LTitleBar.BackgroundColor3 = C.BG2
+    LTitleBar.BorderSizePixel  = 0
     Instance.new("UICorner", LTitleBar).CornerRadius = UDim.new(0, 12)
 
     local LTFix = Instance.new("Frame", LTitleBar)
-    LTFix.Size, LTFix.Position, LTFix.BackgroundColor3 = UDim2.new(1, 0, 0, 12), UDim2.new(0, 0, 1, -12), C.BG2
+    LTFix.Size            = UDim2.new(1, 0, 0, 12)
+    LTFix.Position        = UDim2.new(0, 0, 1, -12)
+    LTFix.BackgroundColor3 = C.BG2
+    LTFix.BorderSizePixel  = 0
 
     local LDot = Instance.new("Frame", LTitleBar)
-    LDot.Size, LDot.Position, LDot.BackgroundColor3 = UDim2.new(0, 6, 0, 6), UDim2.new(0, 14, 0.5, -3), C.ACCENT
+    LDot.Size            = UDim2.new(0, 6, 0, 6)
+    LDot.Position        = UDim2.new(0, 14, 0.5, -3)
+    LDot.BackgroundColor3 = C.ACCENT
+    LDot.BorderSizePixel  = 0
     Instance.new("UICorner", LDot).CornerRadius = UDim.new(1, 0)
 
     local LTitleLbl = Instance.new("TextLabel", LTitleBar)
-    LTitleLbl.Size, LTitleLbl.Position, LTitleLbl.BackgroundTransparency, LTitleLbl.Text = UDim2.new(1, -120, 1, 0), UDim2.new(0, 28, 0, 0), 1, "Live Server"
-    LTitleLbl.TextColor3, LTitleLbl.Font, LTitleLbl.TextSize, LTitleLbl.TextXAlignment = C.TEXT_PRI, Enum.Font.GothamBold, 13, Enum.TextXAlignment.Left
+    LTitleLbl.Size           = UDim2.new(1, -120, 1, 0)
+    LTitleLbl.Position       = UDim2.new(0, 28, 0, 0)
+    LTitleLbl.BackgroundTransparency = 1
+    LTitleLbl.Text           = "Live Server"
+    LTitleLbl.TextColor3     = C.TEXT_PRI
+    LTitleLbl.Font           = Enum.Font.GothamBold
+    LTitleLbl.TextSize       = 13
+    LTitleLbl.TextXAlignment = Enum.TextXAlignment.Left
 
     local RefreshLbl = Instance.new("TextLabel", LTitleBar)
-    RefreshLbl.Size, RefreshLbl.Position, RefreshLbl.BackgroundTransparency, RefreshLbl.Text = UDim2.new(0, 80, 1, 0), UDim2.new(1, -118, 0, 0), 1, "5s"
-    RefreshLbl.TextColor3, RefreshLbl.Font, RefreshLbl.TextSize, RefreshLbl.TextXAlignment = C.TEXT_SEC, Enum.Font.GothamMedium, 9, Enum.TextXAlignment.Right
+    RefreshLbl.Size          = UDim2.new(0, 80, 1, 0)
+    RefreshLbl.Position      = UDim2.new(1, -118, 0, 0)
+    RefreshLbl.BackgroundTransparency = 1
+    RefreshLbl.Text          = "5s"
+    RefreshLbl.TextColor3    = C.TEXT_SEC
+    RefreshLbl.Font          = Enum.Font.GothamMedium
+    RefreshLbl.TextSize      = 9
+    RefreshLbl.TextXAlignment = Enum.TextXAlignment.Right
 
     local CloseBtn = Instance.new("TextButton", LTitleBar)
-    CloseBtn.Size, CloseBtn.Position, CloseBtn.BackgroundColor3, CloseBtn.Text = UDim2.new(0, 24, 0, 24), UDim2.new(1, -32, 0.5, -12), C.BG3, "✕"
-    CloseBtn.TextColor3, CloseBtn.Font, CloseBtn.TextSize, CloseBtn.BorderSizePixel = C.ACCENT_DIM, Enum.Font.GothamBold, 11, 0
+    CloseBtn.Size            = UDim2.new(0, 24, 0, 24)
+    CloseBtn.Position        = UDim2.new(1, -32, 0.5, -12)
+    CloseBtn.BackgroundColor3 = C.BG3
+    CloseBtn.Text            = "✕"
+    CloseBtn.TextColor3      = C.ACCENT_DIM
+    CloseBtn.Font            = Enum.Font.GothamBold
+    CloseBtn.TextSize        = 11
+    CloseBtn.BorderSizePixel  = 0
     Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 
     CloseBtn.MouseButton1Click:Connect(function()
@@ -798,19 +849,32 @@ function BuatLiveWindow()
     MakeDivider(LFrame, 40)
 
     local LScroll = Instance.new("ScrollingFrame", LFrame)
-    LScroll.Size, LScroll.Position, LScroll.BackgroundTransparency, LScroll.ScrollBarThickness = UDim2.new(1, -10, 1, -50), UDim2.new(0, 5, 0, 46), 1, 2
-    LScroll.CanvasSize, LScroll.BorderSizePixel = UDim2.new(0, 0, 0, 0), 0
+    LScroll.Size              = UDim2.new(1, -10, 1, -50)
+    LScroll.Position          = UDim2.new(0, 5, 0, 46)
+    LScroll.BackgroundTransparency = 1
+    LScroll.ScrollBarThickness = 2
+    LScroll.ScrollBarImageColor3 = C.BORDER
+    LScroll.CanvasSize        = UDim2.new(0, 0, 0, 0)
+    LScroll.BorderSizePixel   = 0
 
     local LLayout = Instance.new("UIListLayout", LScroll)
-    LLayout.SortOrder, LLayout.Padding = Enum.SortOrder.LayoutOrder, UDim.new(0, 4)
+    LLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    LLayout.Padding   = UDim.new(0, 4)
 
     local LPlaceholder = Instance.new("TextLabel", LScroll)
-    LPlaceholder.Size, LPlaceholder.BackgroundTransparency, LPlaceholder.Text = UDim2.new(1, 0, 0, 80), 1, "Memuat data...\nPilih pet target di tab Auto Buy terlebih dahulu."
-    LPlaceholder.TextColor3, LPlaceholder.Font, LPlaceholder.TextSize, LPlaceholder.TextXAlignment, LPlaceholder.TextWrapped = C.TEXT_SEC, Enum.Font.GothamMedium, 10, Enum.TextXAlignment.Center, true
+    LPlaceholder.Size          = UDim2.new(1, 0, 0, 80)
+    LPlaceholder.BackgroundTransparency = 1
+    LPlaceholder.Text          = "Memuat data...\nPilih pet target di tab Auto Buy terlebih dahulu."
+    LPlaceholder.TextColor3    = C.TEXT_SEC
+    LPlaceholder.Font          = Enum.Font.GothamMedium
+    LPlaceholder.TextSize      = 10
+    LPlaceholder.TextXAlignment = Enum.TextXAlignment.Center
+    LPlaceholder.TextWrapped   = true
+    LPlaceholder.Visible       = true
 
     MakeDraggable(LFrame, LTitleBar)
 
-    -- [3] REFRESH LOOP DATABASE (TERISOLASI AMAN)
+    -- [3] REFRESH LOOP DATABASE HOOKED IN SEPARATED THREAD
     task.spawn(function()
         while LiveWindowRef == LSG do
             for i = 5, 1, -1 do
@@ -829,6 +893,7 @@ function BuatLiveWindow()
 
             if ok and res and res.Body then
                 local okD, data = pcall(function() return HttpService:JSONDecode(res.Body) end)
+
                 if okD and type(data) == "table" then
                     local entries = {}
                     local now = os.time()
@@ -850,7 +915,10 @@ function BuatLiveWindow()
                                         })
                                     elseif sisa <= 0 then
                                         pcall(function()
-                                            HttpRequest({ Url = FirebaseURL .. "LivePets/" .. serverJobId .. ".json", Method = "DELETE" })
+                                            HttpRequest({
+                                                Url    = FirebaseURL .. "LivePets/" .. serverJobId .. ".json",
+                                                Method = "DELETE"
+                                            })
                                         end)
                                     end
                                 end
@@ -878,7 +946,6 @@ function BuatLiveWindow()
                         LScroll.CanvasSize = UDim2.new(0, 0, 0, LLayout.AbsoluteContentSize.Y + 8)
                     end
 
-                    -- Auto Hop Logic Hook
                     if Config.AutoHop and #entries > 0 then
                         for _, entry in ipairs(entries) do
                             if entry.JobId ~= game.JobId and entry.PCur < entry.PMax then
@@ -943,7 +1010,7 @@ local function CekPetLokal(item)
     if root and targetPart then
         StatusBar.Text = "Auto Buy: " .. petCocok .. " ditemukan!"
         root.CFrame = targetPart.CFrame
-        task.wait(0.01) -- Dipercepat dari 0.08 ke 0.01 detik agar tidak keduluan player lain
+        task.wait(0.01) -- Dipercepat instan ke 0.01s agar anti-keduluan player lain
 
         local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
         if prompt then
@@ -963,7 +1030,7 @@ local function CekPetLokal(item)
 end
 
 -- ============================================================
--- WORLD DETECTOR (TURBO SPEED MODE)
+-- WORLD DETECTOR (TURBO SPEED MODE & TEMBUS DEEPEST FOLDERS)
 -- ============================================================
 task.spawn(function()
     local ok, Map = pcall(function() return workspace:WaitForChild("Map", 15) end)
@@ -980,22 +1047,22 @@ task.spawn(function()
         end
     end
 
-    -- [1] SCAN INSTAN UNTUK PET LAMA
+    -- [1] SCAN INSTAN UNTUK PET LAMA (Membongkar isi folder inner "Middle")
     task.defer(function()
         for _, obj in ipairs(PetFolder:GetDescendants()) do
             ProsesObjek(obj)
         end
     end)
 
-    -- [2] SCAN TURBO UNTUK PET BARU
+    -- [2] SCAN TURBO UNTUK PET BARU (Deteksi real-time instan tanpa wait delay)
     PetFolder.DescendantAdded:Connect(function(newDescendant)
         ProsesObjek(newDescendant)
     end)
     
-    -- [3] HIGH-FREQUENCY BACKUP LOOP (Setiap 1 Detik)
+    -- [3] HIGH-FREQUENCY BACKUP LOOP (Setiap 1 Detik untuk AFK Farming stabil)
     task.spawn(function()
         while MainSG.Parent do
-            task.wait(1)
+            task.wait(1) 
             if Config.AutoBuy then
                 for _, obj in ipairs(PetFolder:GetDescendants()) do
                     ProsesObjek(obj)
