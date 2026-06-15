@@ -782,6 +782,8 @@ local function BuatLiveWindow()
 
     MakeDraggable(LFrame, LTitleBar)
 
+    local sedangTeleport = false
+
     -- ── Render entry ───────────────────────────────────────
     local function BuatEntryLive(order, namaPet, jobId, sisaDetik, pCur, pMax)
         local meta   = PetMetadata[namaPet] or { Rarity = "Common", Tier = 1 }
@@ -863,30 +865,48 @@ local function BuatLiveWindow()
         ClickBtn.Text             = ""
 
         ClickBtn.MouseButton1Click:Connect(function()
-            if isHere then
-                StatusBar.Text = "Kamu sudah di server ini."
-                return
-            end
-            if isFull then
-                StatusBar.Text = "Server penuh, pilih yang lain."
-                return
-            end
-            StatusBar.Text = "Joining " .. string.sub(jobId,1,8) .. "…"
-            LTitleLbl.Text = "Joining..."
-            pcall(function()
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, LocalPlayer)
-            end)
+    if isHere then
+        StatusBar.Text = "Kamu sudah di server ini."
+        return
+    end
+    if isFull then
+        StatusBar.Text = "Server penuh, pilih yang lain."
+        return
+    end
+    
+    -- [PROTEKSI ANTI-SPAM] Jika sedang dalam proses join, block klik berikutnya
+    if sedangTeleport then
+        StatusBar.Text = "Tunggu, sedang mencoba terhubung ke server..."
+        return
+    end
+
+    -- Aktifkan status lock
+    sedangTeleport = true
+    StatusBar.Text = "Joining " .. string.sub(jobId, 1, 8) .. "…"
+    NLbl.Text = "Joining..."
+
+    -- Jalankan di thread terpisah (task.spawn) agar UI menu tidak ikutan hang/macet
+    task.spawn(function()
+        local sukses, err = pcall(function()
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, LocalPlayer)
         end)
 
-        ClickBtn.MouseEnter:Connect(function()
-            if not isFull and not isHere then
-                TweenService:Create(Card, TweenInfo.new(0.1), { BackgroundColor3 = C.BG3 }):Play()
-            end
-        end)
-        ClickBtn.MouseLeave:Connect(function()
-            TweenService:Create(Card, TweenInfo.new(0.1), { BackgroundColor3 = C.BG2 }):Play()
-        end)
-    end
+        -- Jika gagal teleport karena server penuh mendadak atau kendala jaringan Roblox
+        if not sukses then
+            warn("Teleport Gagal: ", err)
+            StatusBar.Text = "Gagal join! Mencoba reset dalam 3 detik..."
+            task.wait(3) -- Beri delay 3 detik sebelum tombol bisa diklik lagi
+            sedangTeleport = false
+            NLbl.Text = namaPet -- Kembalikan teks nama pet semula
+            StatusBar.Text = "Pet Finder V31  ·  Ready"
+        else
+            -- Backup safety: jika dalam 10 detik game tidak kunjung pindah server (nyangkut), buka kembali kuncinya
+            task.delay(10, function()
+                sedangTeleport = false
+            end)
+        end
+    end)
+end)
 
     -- ── Refresh loop ───────────────────────────────────────
     local countdown = 5
