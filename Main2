@@ -28,6 +28,8 @@ local Config = {
     AutoHop = false,
 }
 
+local sedangTeleport = false
+
 -- Forward declaration: dipakai oleh toggle Auto Buy & toggle pet target
 -- agar saat diaktifkan langsung mengecek pet yang SUDAH ADA di WildPetSpawns
 -- (bukan hanya pet yang baru spawn lewat ChildAdded)
@@ -782,8 +784,6 @@ local function BuatLiveWindow()
 
     MakeDraggable(LFrame, LTitleBar)
 
-    local sedangTeleport = false
-
     -- ── Render entry ───────────────────────────────────────
     local function BuatEntryLive(order, namaPet, jobId, sisaDetik, pCur, pMax)
         local meta   = PetMetadata[namaPet] or { Rarity = "Common", Tier = 1 }
@@ -1115,4 +1115,5 @@ task.spawn(function()
         end
     end)
 end)
+
 print("[PetFinder V31] Aktif ✔  |  Main window siap.")
