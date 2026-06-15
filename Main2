@@ -1050,16 +1050,52 @@ local function CekPetLokal(item)
     end
 end
 
+-- ============================================================
+-- WORLD DETECTOR (FIXED: TEMBUS FOLDER INNER/MIDDLE)
+-- ============================================================
 task.spawn(function()
+    -- Tunggu Map dan folder pet sampai benar-benar ada di workspace
     local ok, Map = pcall(function() return workspace:WaitForChild("Map", 15) end)
     if not ok or not Map then return end
+    
     local ok2, PetFolder = pcall(function() return Map:WaitForChild("WildPetSpawns", 15) end)
     if not ok2 or not PetFolder then return end
 
-    for _, obj in ipairs(PetFolder:GetChildren()) do task.spawn(CekPetLokal, obj) end
-    PetFolder.ChildAdded:Connect(function(newItem)
-        task.wait(0.03)
-        task.spawn(CekPetLokal, newItem)
+    -- Fungsi khusus untuk memproses objek dan memastikan itu adalah Model Pet
+    local function ProsesObjek(obj)
+        -- Cek apakah objek ini adalah Model atau Part yang mengandung indikasi nama pet target
+        if obj:IsA("Model") or obj:IsA("BasePart") then
+            -- Pastikan objek ini berada di dalam jalur WildPetSpawns
+            if obj:IsDescendantOf(PetFolder) then
+                task.spawn(CekPetLokal, obj)
+            end
+        end
+    end
+
+    -- [1] SCAN PET YANG SUDAH ADA SEBELUMNYA (TEMBUS SEMUA LAYER FOLDER)
+    task.defer(function()
+        -- Menggunakan GetDescendants() agar folder seperti "Middle" atau folder acak ikut terbongkar isinya
+        for _, obj in ipairs(PetFolder:GetDescendants()) do
+            ProsesObjek(obj)
+        end
+    end)
+
+    -- [2] SCAN PET YANG BARU SPAWN ATAU FOLDER BARU YANG MASUK
+    PetFolder.DescendantAdded:Connect(function(newDescendant)
+        task.wait(0.05) -- Jeda tipis agar instansi di dalam model (ProximityPrompt) sempat ter-render sempurna
+        ProsesObjek(newDescendant)
+    end)
+    
+    -- [3] BACKUP LOOP: Scan ulang berkala setiap 3 detik agar tidak ada yang terlewat saat AFK
+    task.spawn(function()
+        while MainSG.Parent do
+            task.wait(3)
+            if Config.AutoBuy then
+                for _, obj in ipairs(PetFolder:GetDescendants()) do
+                    ProsesObjek(obj)
+                end
+            end
+        end
     end)
 end)
 
