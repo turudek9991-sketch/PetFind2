@@ -300,7 +300,7 @@ MinBtn.TextSize         = 14
 MinBtn.BorderSizePixel  = 0
 Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
 
--- ── Tab Bar (GANTI BAGIAN INI DI SCRIPT 1073 LINES MU) ──────────────────────
+-- ── Tab Bar (Tengah Frame Sempurna) ────────────────────────────────────────
 local TabBar = Instance.new("Frame", MainFrame)
 TabBar.Size             = UDim2.new(1, -24, 0, 28)
 TabBar.Position         = UDim2.new(0, 12, 0, 46)
@@ -311,10 +311,11 @@ Instance.new("UICorner", TabBar).CornerRadius = UDim.new(0, 8)
 local TabLayout = Instance.new("UIListLayout", TabBar)
 TabLayout.FillDirection = Enum.FillDirection.Horizontal
 TabLayout.SortOrder     = Enum.SortOrder.LayoutOrder
+TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center -- MEMBUAT BUTTON DI TENGAH
 
 local tabNames = {"AUTO BUY", "AUTO HOP", "LIVE SERVER"}
 local TabBtns   = {}
-local tabW      = (W - 24) / 3 -- Perhitungan jarak tetap 92px per tab
+local tabW      = (W - 36) / 3 -- Ukuran disesuaikan sedikit agar pas proporsinya
 
 for i, name in ipairs(tabNames) do
     local Tb = Instance.new("TextButton", TabBar)
@@ -324,14 +325,14 @@ for i, name in ipairs(tabNames) do
     Tb.Text              = name
     Tb.TextColor3        = C.TAB_IDLE
     Tb.Font              = Enum.Font.GothamBold
-    Tb.TextSize          = 8.5 -- Dikecilkan sedikit agar "LIVE SERVER" muat rapi
+    Tb.TextSize          = 8.5
     TabBtns[i]           = Tb
 end
 
--- Tab indicator underline
+-- Tab indicator underline yang presisi ikut ke tengah
 local TabIndicator = Instance.new("Frame", TabBar)
 TabIndicator.Size            = UDim2.new(0, tabW - 16, 0, 2)
-TabIndicator.Position        = UDim2.new(0, 8, 1, -2)
+TabIndicator.Position        = UDim2.new(0, 6, 1, -2) -- Disesuaikan offset-nya
 TabIndicator.BackgroundColor3 = C.ACCENT
 TabIndicator.BorderSizePixel  = 0
 Instance.new("UICorner", TabIndicator).CornerRadius = UDim.new(1, 0)
@@ -1051,45 +1052,41 @@ local function CekPetLokal(item)
 end
 
 -- ============================================================
--- WORLD DETECTOR (FIXED: TEMBUS FOLDER INNER/MIDDLE)
+-- WORLD DETECTOR (TURBO SPEED MODE)
 -- ============================================================
 task.spawn(function()
-    -- Tunggu Map dan folder pet sampai benar-benar ada di workspace
     local ok, Map = pcall(function() return workspace:WaitForChild("Map", 15) end)
     if not ok or not Map then return end
     
     local ok2, PetFolder = pcall(function() return Map:WaitForChild("WildPetSpawns", 15) end)
     if not ok2 or not PetFolder then return end
 
-    -- Fungsi khusus untuk memproses objek dan memastikan itu adalah Model Pet
     local function ProsesObjek(obj)
-        -- Cek apakah objek ini adalah Model atau Part yang mengandung indikasi nama pet target
         if obj:IsA("Model") or obj:IsA("BasePart") then
-            -- Pastikan objek ini berada di dalam jalur WildPetSpawns
             if obj:IsDescendantOf(PetFolder) then
-                task.spawn(CekPetLokal, obj)
+                -- Langsung tembak tanpa task.spawn tambahan agar thread utama tidak antre
+                CekPetLokal(obj)
             end
         end
     end
 
-    -- [1] SCAN PET YANG SUDAH ADA SEBELUMNYA (TEMBUS SEMUA LAYER FOLDER)
+    -- [1] SCAN INSTAN UNTUK PET LAMA
     task.defer(function()
-        -- Menggunakan GetDescendants() agar folder seperti "Middle" atau folder acak ikut terbongkar isinya
         for _, obj in ipairs(PetFolder:GetDescendants()) do
             ProsesObjek(obj)
         end
     end)
 
-    -- [2] SCAN PET YANG BARU SPAWN ATAU FOLDER BARU YANG MASUK
+    -- [2] SCAN TURBO UNTUK PET BARU (DELAY HAPUS TOTAL)
     PetFolder.DescendantAdded:Connect(function(newDescendant)
-        task.wait(0.05) -- Jeda tipis agar instansi di dalam model (ProximityPrompt) sempat ter-render sempurna
+        -- Langsung eksekusi di milidetik pertama data masuk ke Workspace
         ProsesObjek(newDescendant)
     end)
     
-    -- [3] BACKUP LOOP: Scan ulang berkala setiap 3 detik agar tidak ada yang terlewat saat AFK
+    -- [3] HIGH-FREQUENCY BACKUP LOOP (Setiap 1 Detik)
     task.spawn(function()
         while MainSG.Parent do
-            task.wait(3)
+            task.wait(1) -- Kecepatan check-up dinaikkan ke 1 detik
             if Config.AutoBuy then
                 for _, obj in ipairs(PetFolder:GetDescendants()) do
                     ProsesObjek(obj)
@@ -1098,5 +1095,4 @@ task.spawn(function()
         end
     end)
 end)
-
 print("[PetFinder V31] Aktif ✔  |  Main window siap.")
