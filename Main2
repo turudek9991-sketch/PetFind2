@@ -1,106 +1,97 @@
 -- ============================================================
--- GROW A GARDEN: PET FINDER MAIN V31 (FIXED STRUCTURE)
--- 1 Window utama | 3 Tab: Auto Buy / Auto Hop / Live Server
--- Tab Live Server membuka popup window terpisah (auto-refresh 5s)
+-- GROW A GARDEN: PET FINDER MAIN V33.2 (FULL FIX KAMERA & BUY)
+-- 1 Window utama | 1 Tab: Auto Buy
 -- Warna: Monokrom elegan (hitam + putih + aksen putih/abu)
 -- ============================================================
 
 local Players         = game:GetService("Players")
 local HttpService     = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
 local TweenService    = game:GetService("TweenService")
-local GuiService      = game:GetService("GuiService")
 local RunService      = game:GetService("RunService")
 local UIS             = game:GetService("UserInputService")
 local LocalPlayer     = Players.LocalPlayer
 local PlayerGui       = LocalPlayer:WaitForChild("PlayerGui")
 
 -- ============================================================
--- KONFIGURASI
+-- KONFIGURASI WEBHOOK DISCORD
 -- ============================================================
-local FirebaseURL  = "https://growagardenpetfinder-default-rtdb.asia-southeast1.firebasedatabase.app/"
-local ConfigFile   = "PetFinderMainV31.json"
-local PET_LIFETIME = 600
+local DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1516387782233297007/8yTQuqiEsx6PykRtu7vfeF6iWB8tfBSKpVzz1mDuuW9un5CAqIB-ZSscUpsbpZLk_AgT"
+
+-- ============================================================
+-- FORCE FIX KAMERA (VERSI ULTRA FIX & SEAMLESS)
+-- ============================================================
+local function PaksaKameraKePlayer()
+    local Cam = workspace.CurrentCamera
+    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local hum = char:WaitForChild("Humanoid", 5)
+    
+    if hum then
+        -- Hancurkan paksa UI loading jika masih tersisa di layar
+        local CoreLoading = workspace:FindFirstChild("LoadingScreenMenu")
+        if CoreLoading then pcall(function() CoreLoading:Destroy() end) end
+        
+        -- Matikan efek blur
+        pcall(function()
+            local Lighting = game:GetService("Lighting")
+            local Blur = Lighting:FindFirstChild("Blur") or Cam:FindFirstChild("Blur")
+            if Blur then Blur:Destroy() end
+        end)
+
+        -- Paksa reset mode kamera ke normal (Custom)
+        Cam.CameraType = Enum.CameraType.Custom
+        Cam.CameraSubject = hum
+        Cam.FieldOfView = 70
+    end
+end
+
+-- Jalankan otomatis saat pertama kali script di-inject
+task.spawn(function()
+    PaksaKameraKePlayer()
+    
+    -- Mengawasi jika loading screen dihancurkan oleh game secara alami
+    workspace.ChildRemoved:Connect(function(child)
+        if child.Name == "LoadingScreenMenu" then
+            task.wait(0.1)
+            PaksaKameraKePlayer()
+        end
+    end)
+end)
+
+-- ============================================================
+-- KONFIGURASI SAVE / LOAD
+-- ============================================================
+local ConfigFile = "PetFinderMainV33.json"
 
 local Config = {
-    Targets = {},
-    AutoBuy = false,
-    AutoHop = false,
+    Targets   = {},
+    AutoBuy   = false,
+    AntiSteal = false,
 }
 
--- Variabel Proteksi Global Anti-Spam Teleportasi
-local sedangTeleport = false
-
--- Forward declaration
-local WildPetSpawnsFolder = nil
-local CekPetLokal
-local ScanWildPetSpawns
-
--- ============================================================
--- METADATA PET
--- ============================================================
-local PetMetadata = {
-    Frog            = { Rarity = "Common",    Tier = 1 },
-    Bunny           = { Rarity = "Common",    Tier = 1 },
-    Owl             = { Rarity = "Uncommon",  Tier = 2 },
-    Deer            = { Rarity = "Rare",      Tier = 3 },
-    Robin           = { Rarity = "Legendary", Tier = 4 },
-    Bee             = { Rarity = "Legendary", Tier = 4 },
-    Dragonfly       = { Rarity = "Mythic",    Tier = 5 },
-    Monkey          = { Rarity = "Mythic",    Tier = 5 },
-    GoldenDragonfly = { Rarity = "Mythic",    Tier = 5 },
-    Unicorn         = { Rarity = "Mythic",    Tier = 5 },
-    Raccoon         = { Rarity = "Super",     Tier = 6 },
-    BlackDragon     = { Rarity = "Super",     Tier = 6 },
-    IceSerpent      = { Rarity = "Super",     Tier = 6 },
-}
-
-local RarityColor = {
-    Common    = Color3.fromRGB(130, 130, 130),
-    Uncommon  = Color3.fromRGB(170, 170, 170),
-    Rare      = Color3.fromRGB(200, 200, 200),
-    Legendary = Color3.fromRGB(220, 220, 220),
-    Mythic    = Color3.fromRGB(240, 240, 240),
-    Super     = Color3.fromRGB(255, 255, 255),
-}
+local CekPetLokal     -- Forward declaration
+local PetSudahDibeli  = {} -- Tabel set untuk tracking pet yang sudah dibeli (Anti Steal)
 
 local ListSemuaPet = {
-    "Frog","Bunny","Owl","Deer","Robin","Bee",
-    "Dragonfly","Monkey","GoldenDragonfly","Unicorn",
-    "Raccoon","BlackDragon","IceSerpent",
+    "Frog", "Bunny", "Owl", "Deer", "Robin", "Bee",
+    "Dragonfly", "Monkey", "GoldenDragonfly", "Unicorn",
+    "Raccoon", "BlackDragon", "IceSerpent",
 }
 
-local HttpRequest = (syn and syn.request) or (http and http.request) or http_request or request
+for _, p in ipairs(ListSemuaPet) do
+    Config.Targets[p] = false
+end
 
--- ============================================================
--- PALET WARNA ELEGAN
--- ============================================================
-local C = {
-    BG          = Color3.fromRGB(10,  10,  12),   
-    BG2         = Color3.fromRGB(16,  16,  20),   
-    BG3         = Color3.fromRGB(22,  22,  28),   
-    BORDER      = Color3.fromRGB(38,  38,  48),   
-    ACCENT      = Color3.fromRGB(255, 255, 255),  
-    ACCENT_DIM  = Color3.fromRGB(160, 160, 170),  
-    TEXT_PRI    = Color3.fromRGB(235, 235, 240),  
-    TEXT_SEC    = Color3.fromRGB(100, 100, 115),  
-    TAB_ACTIVE  = Color3.fromRGB(255, 255, 255),
-    TAB_IDLE    = Color3.fromRGB(70,  70,  85),
-    TOGGLE_ON   = Color3.fromRGB(255, 255, 255),
-    TOGGLE_OFF  = Color3.fromRGB(40,  40,  52),
-    DANGER      = Color3.fromRGB(200, 80,  80),
-}
-
--- ============================================================
--- SAVE / LOAD CONFIG
--- ============================================================
 local function LoadConfig()
     if isfile and readfile and isfile(ConfigFile) then
         local ok, data = pcall(function() return HttpService:JSONDecode(readfile(ConfigFile)) end)
         if ok and type(data) == "table" then
-            if data.Targets then Config.Targets = data.Targets end
-            if data.AutoBuy ~= nil then Config.AutoBuy = data.AutoBuy end
-            if data.AutoHop ~= nil then Config.AutoHop = data.AutoHop end
+            if data.AutoBuy   ~= nil then Config.AutoBuy   = data.AutoBuy   end
+            if data.AntiSteal ~= nil then Config.AntiSteal = data.AntiSteal end
+            if data.Targets and type(data.Targets) == "table" then
+                for k, v in pairs(data.Targets) do
+                    if Config.Targets[k] ~= nil then Config.Targets[k] = v end
+                end
+            end
         end
     end
 end
@@ -114,932 +105,493 @@ end
 LoadConfig()
 
 -- ============================================================
--- ERROR OVERLAY REMOVER
+-- DISCORD WEBHOOK NOTIFIKASI
 -- ============================================================
-GuiService.ErrorMessageChanged:Connect(function()
-    task.wait(0.1)
-    local g = game:GetService("CoreGui"):FindFirstChild("RobloxPromptGui")
-    if g then
-        local ov = g:FindFirstChild("promptOverlay")
-        if ov then ov.Visible = false end
+local function KirimNotifDiscord(namaPet, sukses)
+    local httpFunc = HttpRequest or request or (syn and syn.request) or http_request or nil
+    if not httpFunc then
+        warn("[Webhook] Tidak ada fungsi HTTP yang tersedia di executor ini!")
+        return
     end
-end)
 
--- ============================================================
--- GUI PARENT + CLEANUP
--- ============================================================
-local GuiParent = game:GetService("CoreGui")
-if not pcall(function() return GuiParent.Name end) then GuiParent = PlayerGui end
+    local judul, warnaDec, emoji
+    if sukses then
+        judul    = "✅ Pembelian Berhasil!"
+        warnaDec = 5763719   -- hijau
+        emoji    = "🎉"
+    else
+        judul    = "❌ Pembelian Gagal"
+        warnaDec = 15548997  -- merah
+        emoji    = "😢"
+    end
 
-for _, n in ipairs({"PetFinderMainV31", "PetFinderLiveV31"}) do
-    local old = GuiParent:FindFirstChild(n)
-    if old then old:Destroy() end
+    local deskripsi = emoji .. " **Nama Pet:** `" .. namaPet .. "`\n"
+        .. "**Status:** " .. (sukses and "✅ Berhasil masuk ke tas" or "❌ Tidak masuk ke tas dalam 30 detik") .. "\n"
+        .. "**Server Job ID:** `" .. tostring(game.JobId) .. "`\n"
+        .. "**Waktu:** <t:" .. os.time() .. ":R>"
+
+    local payload = HttpService:JSONEncode({
+        username   = "Pet Finder Bot 🌱",
+        avatar_url = "https://i.imgur.com/AfFp7pu.png",
+        embeds = {
+            {
+                title       = judul,
+                description = deskripsi,
+                color       = warnaDec,
+                footer      = { text = "Pet Finder V33.2 · Grow a Garden" },
+                timestamp   = os.date("!%Y-%m-%dT%H:%M:%SZ"),
+            }
+        }
+    })
+
+    local ok, err = pcall(function()
+        httpFunc({
+            Url     = DISCORD_WEBHOOK_URL,
+            Method  = "POST",
+            Headers = { ["Content-Type"] = "application/json" },
+            Body    = payload,
+        })
+    end)
+
+    if not ok then
+        warn("[Webhook] Gagal kirim notif Discord:", tostring(err))
+    else
+        print("[Webhook] Notif Discord terkirim:", namaPet, sukses and "SUKSES" or "GAGAL")
+    end
 end
 
 -- ============================================================
--- HELPER: DRAG LOGIC
+-- PALET WARNA MONOKROM ELEGAN
 -- ============================================================
-local function MakeDraggable(frame, handle)
-    local dragging = false
-    local dragStart, startPos
+local C = {
+    BG       = Color3.fromRGB(14, 14, 16),
+    BG_TAB   = Color3.fromRGB(20, 20, 24),
+    BG_CARD  = Color3.fromRGB(26, 26, 32),
+    BORDER   = Color3.fromRGB(45, 45, 55),
+    TEXT_PRI = Color3.fromRGB(245, 245, 250),
+    TEXT_SEC = Color3.fromRGB(130, 130, 145),
+    ACCENT   = Color3.fromRGB(255, 255, 255),
+    GREEN    = Color3.fromRGB(80, 200, 120),
+}
 
+-- Cleanup UI Lama
+local CoreGui = game:GetService("CoreGui")
+local old = CoreGui:FindFirstChild("PetFinderMainSG") or PlayerGui:FindFirstChild("PetFinderMainSG")
+if old then old:Destroy() end
+
+local MainSG = Instance.new("ScreenGui", (pcall(function() return CoreGui.Name end) and CoreGui or PlayerGui))
+MainSG.Name         = "PetFinderMainSG"
+MainSG.ResetOnSpawn = false
+
+-- ============================================================
+-- DRAGGABLE LOGIC
+-- ============================================================
+local function BuatBisaDidrag(frame, handle)
+    local dragging, dragStart, startPos
     handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging  = true
             dragStart = input.Position
             startPos  = frame.Position
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
             end)
         end
     end)
-
     UIS.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
-        or input.UserInputType == Enum.UserInputType.Touch) then
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
-            frame.Position = UDim2.new(
-                startPos.X.Scale, startPos.X.Offset + delta.X,
-                startPos.Y.Scale, startPos.Y.Offset + delta.Y
-            )
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
 end
 
 -- ============================================================
--- HELPER: TOGGLE SWITCH (monokrom)
+-- WINDOW UTAMA
 -- ============================================================
-local function MakeToggle(parent, label, initVal, posY, callback)
-    local Row = Instance.new("Frame", parent)
-    Row.Size              = UDim2.new(1, -24, 0, 30)
-    Row.Position          = UDim2.new(0, 12, 0, posY)
-    Row.BackgroundTransparency = 1
+local Window = Instance.new("Frame", MainSG)
+Window.Size            = UDim2.new(0, 320, 0, 420)
+Window.Position        = UDim2.new(0, 60, 0, 120)
+Window.BackgroundColor3 = C.BG
+Window.BorderSizePixel = 0
+Instance.new("UICorner", Window).CornerRadius = UDim.new(0, 8)
+local WindowStroke = Instance.new("UIStroke", Window)
+WindowStroke.Color = C.BORDER
 
-    local Lbl = Instance.new("TextLabel", Row)
-    Lbl.Size              = UDim2.new(1, -56, 1, 0)
-    Lbl.BackgroundTransparency = 1
-    Lbl.Text              = label
-    Lbl.TextColor3        = C.TEXT_PRI
-    Lbl.Font              = Enum.Font.GothamMedium
-    Lbl.TextSize          = 11
-    Lbl.TextXAlignment    = Enum.TextXAlignment.Left
-
-    local Track = Instance.new("Frame", Row)
-    Track.Size            = UDim2.new(0, 40, 0, 20)
-    Track.Position        = UDim2.new(1, -44, 0, 5)
-    Track.BackgroundColor3 = initVal and C.TOGGLE_ON or C.TOGGLE_OFF
-    Track.BorderSizePixel  = 0
-    Instance.new("UICorner", Track).CornerRadius = UDim.new(1, 0)
-
-    local Ball = Instance.new("Frame", Track)
-    Ball.Size            = UDim2.new(0, 14, 0, 14)
-    Ball.Position        = initVal and UDim2.new(0, 23, 0, 3) or UDim2.new(0, 3, 0, 3)
-    Ball.BackgroundColor3 = initVal and C.BG or C.ACCENT_DIM
-    Ball.BorderSizePixel  = 0
-    Instance.new("UICorner", Ball).CornerRadius = UDim.new(1, 0)
-
-    local Btn = Instance.new("TextButton", Track)
-    Btn.Size             = UDim2.new(1, 0, 1, 0)
-    Btn.BackgroundTransparency = 1
-    Btn.Text             = ""
-
-    local state = initVal
-    Btn.MouseButton1Click:Connect(function()
-        state = not state
-        TweenService:Create(Track, TweenInfo.new(0.15), {
-            BackgroundColor3 = state and C.TOGGLE_ON or C.TOGGLE_OFF
-        }):Play()
-        TweenService:Create(Ball, TweenInfo.new(0.15), {
-            Position         = state and UDim2.new(0, 23, 0, 3) or UDim2.new(0, 3, 0, 3),
-            BackgroundColor3 = state and C.BG or C.ACCENT_DIM,
-        }):Play()
-        callback(state)
-    end)
-
-    return Row
-end
-
--- ============================================================
--- HELPER: DIVIDER
--- ============================================================
-local function MakeDivider(parent, posY)
-    local D = Instance.new("Frame", parent)
-    D.Size            = UDim2.new(1, -24, 0, 1)
-    D.Position        = UDim2.new(0, 12, 0, posY)
-    D.BackgroundColor3 = C.BORDER
-    D.BorderSizePixel  = 0
-    return D
-end
-
--- ============================================================
--- ▐█ MAIN WINDOW
--- ============================================================
-local MainSG = Instance.new("ScreenGui", GuiParent)
-MainSG.Name          = "PetFinderMainV31"
-MainSG.ResetOnSpawn  = false
-MainSG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-local W, H = 300, 440
-
-local MainFrame = Instance.new("Frame", MainSG)
-MainFrame.Name            = "MainFrame"
-MainFrame.Size            = UDim2.new(0, W, 0, H)
-MainFrame.Position        = UDim2.new(0, 40, 0, 100)
-MainFrame.BackgroundColor3 = C.BG
-MainFrame.BorderSizePixel  = 0
-MainFrame.ClipsDescendants = false
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
-
-local MainStroke = Instance.new("UIStroke", MainFrame)
-MainStroke.Color     = C.BORDER
-MainStroke.Thickness = 1
-
--- ── Title Bar ──────────────────────────────────────────────
-local TitleBar = Instance.new("Frame", MainFrame)
-TitleBar.Size             = UDim2.new(1, 0, 0, 40)
-TitleBar.BackgroundColor3 = C.BG2
-TitleBar.BorderSizePixel  = 0
-Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 12)
+-- Title Bar
+local TitleBar = Instance.new("Frame", Window)
+TitleBar.Size            = UDim2.new(1, 0, 0, 35)
+TitleBar.BackgroundColor3 = C.BG_TAB
+TitleBar.BorderSizePixel = 0
+Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 8)
 
 local TitleBarFix = Instance.new("Frame", TitleBar)
-TitleBarFix.Size            = UDim2.new(1, 0, 0, 12)
-TitleBarFix.Position        = UDim2.new(0, 0, 1, -12)
-TitleBarFix.BackgroundColor3 = C.BG2
-TitleBarFix.BorderSizePixel  = 0
-
-local TitleDot = Instance.new("Frame", TitleBar)
-TitleDot.Size            = UDim2.new(0, 6, 0, 6)
-TitleDot.Position        = UDim2.new(0, 14, 0.5, -3)
-TitleDot.BackgroundColor3 = C.ACCENT
-TitleDot.BorderSizePixel  = 0
-Instance.new("UICorner", TitleDot).CornerRadius = UDim.new(1, 0)
+TitleBarFix.Size            = UDim2.new(1, 0, 0, 10)
+TitleBarFix.Position        = UDim2.new(0, 0, 1, -10)
+TitleBarFix.BackgroundColor3 = C.BG_TAB
+TitleBarFix.BorderSizePixel = 0
 
 local TitleLbl = Instance.new("TextLabel", TitleBar)
-TitleLbl.Size             = UDim2.new(1, -80, 1, 0)
-TitleLbl.Position         = UDim2.new(0, 28, 0, 0)
+TitleLbl.Size               = UDim2.new(1, -20, 1, 0)
+TitleLbl.Position           = UDim2.new(0, 12, 0, 0)
 TitleLbl.BackgroundTransparency = 1
-TitleLbl.Text             = "Pet Finder · DScripts"
-TitleLbl.TextColor3       = C.TEXT_PRI
-TitleLbl.Font             = Enum.Font.GothamBold
-TitleLbl.TextSize         = 13
-TitleLbl.TextXAlignment   = Enum.TextXAlignment.Left
+TitleLbl.Text               = "PET FINDER v33.2 · ULTRA STABLE"
+TitleLbl.TextColor3         = C.TEXT_PRI
+TitleLbl.Font               = Enum.Font.GothamBold
+TitleLbl.TextSize           = 10
+TitleLbl.TextXAlignment     = Enum.TextXAlignment.Left
 
-local MinBtn = Instance.new("TextButton", TitleBar)
-MinBtn.Size             = UDim2.new(0, 24, 0, 24)
-MinBtn.Position         = UDim2.new(1, -32, 0.5, -12)
-MinBtn.BackgroundColor3 = C.BG3
-MinBtn.Text             = "−"
-MinBtn.TextColor3       = C.ACCENT_DIM
-MinBtn.Font             = Enum.Font.GothamBold
-MinBtn.TextSize         = 14
-MinBtn.BorderSizePixel  = 0
-Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 6)
+BuatBisaDidrag(Window, TitleBar)
 
--- ── Tab Bar (Tengah Frame Sempurna) ────────────────────────────────────────
-local TabBar = Instance.new("Frame", MainFrame)
-TabBar.Size             = UDim2.new(1, -24, 0, 28)
-TabBar.Position         = UDim2.new(0, 12, 0, 46)
-TabBar.BackgroundColor3 = C.BG2
-TabBar.BorderSizePixel  = 0
-Instance.new("UICorner", TabBar).CornerRadius = UDim.new(0, 8)
+-- Content Frame
+local ContentFrame = Instance.new("Frame", Window)
+ContentFrame.Size               = UDim2.new(1, 0, 1, -35)
+ContentFrame.Position           = UDim2.new(0, 0, 0, 35)
+ContentFrame.BackgroundTransparency = 1
 
-local TabLayout = Instance.new("UIListLayout", TabBar)
-TabLayout.FillDirection = Enum.FillDirection.Horizontal
-TabLayout.SortOrder     = Enum.SortOrder.LayoutOrder
-TabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+-- ROW: MAIN AUTO BUY TOGGLE
+local MasterRow = Instance.new("Frame", ContentFrame)
+MasterRow.Size            = UDim2.new(1, -20, 0, 35)
+MasterRow.Position        = UDim2.new(0, 10, 0, 10)
+MasterRow.BackgroundColor3 = Config.AutoBuy and C.BG_CARD or C.BG_TAB
+MasterRow.BorderSizePixel = 0
+Instance.new("UICorner", MasterRow).CornerRadius = UDim.new(0, 6)
+local MasterStroke = Instance.new("UIStroke", MasterRow)
+MasterStroke.Color = Config.AutoBuy and C.ACCENT or C.BORDER
 
-local tabNames = {"AUTO BUY", "AUTO HOP", "LIVE SERVER"}
-local TabBtns   = {}
-local tabW      = (W - 36) / 3 
+local MasterTxt = Instance.new("TextLabel", MasterRow)
+MasterTxt.Size               = UDim2.new(1, -60, 1, 0)
+MasterTxt.Position           = UDim2.new(0, 10, 0, 0)
+MasterTxt.BackgroundTransparency = 1
+MasterTxt.Text               = "MAIN GLOBAL AUTO BUY"
+MasterTxt.TextColor3         = Config.AutoBuy and C.TEXT_PRI or C.TEXT_SEC
+MasterTxt.Font               = Enum.Font.GothamBold
+MasterTxt.TextSize           = 10
+MasterTxt.TextXAlignment     = Enum.TextXAlignment.Left
 
-for i, name in ipairs(tabNames) do
-    local Tb = Instance.new("TextButton", TabBar)
-    Tb.LayoutOrder       = i
-    Tb.Size              = UDim2.new(0, tabW, 1, 0)
-    Tb.BackgroundTransparency = 1
-    Tb.Text              = name
-    Tb.TextColor3        = C.TAB_IDLE
-    Tb.Font              = Enum.Font.GothamBold
-    Tb.TextSize          = 8.5
-    TabBtns[i]           = Tb
-end
+local MasterBtn = Instance.new("TextButton", MasterRow)
+MasterBtn.Size               = UDim2.new(1, 0, 1, 0)
+MasterBtn.BackgroundTransparency = 1
+MasterBtn.Text               = Config.AutoBuy and "ON" or "OFF"
+MasterBtn.TextColor3         = Config.AutoBuy and C.ACCENT or C.TEXT_SEC
+MasterBtn.Font               = Enum.Font.GothamBold
+MasterBtn.TextSize           = 10
+MasterBtn.TextXAlignment     = Enum.TextXAlignment.Right
+local MasterPad = Instance.new("UIPadding", MasterBtn)
+MasterPad.PaddingRight = UDim.new(0, 12)
 
-local TabIndicator = Instance.new("Frame", TabBar)
-TabIndicator.Size            = UDim2.new(0, tabW - 16, 0, 2)
-TabIndicator.Position        = UDim2.new(0, 6, 1, -2) 
-TabIndicator.BackgroundColor3 = C.ACCENT
-TabIndicator.BorderSizePixel  = 0
-Instance.new("UICorner", TabIndicator).CornerRadius = UDim.new(1, 0)
-
-MakeDivider(MainFrame, 80)
-
--- ── Content Container ──────────────────────────────────────
-local ContentHolder = Instance.new("Frame", MainFrame)
-ContentHolder.Size              = UDim2.new(1, 0, 1, -86)
-ContentHolder.Position          = UDim2.new(0, 0, 0, 86)
-ContentHolder.BackgroundTransparency = 1
-ContentHolder.ClipsDescendants  = true
-
--- ── Status bar bawah ───────────────────────────────────────
-local StatusBar = Instance.new("TextLabel", MainFrame)
-StatusBar.Size            = UDim2.new(1, -24, 0, 18)
-StatusBar.Position        = UDim2.new(0, 12, 1, -22)
-StatusBar.BackgroundTransparency = 1
-StatusBar.Text            = "Pet Finder V31  ·  Ready"
-StatusBar.TextColor3      = C.TEXT_SEC
-StatusBar.Font            = Enum.Font.GothamMedium
-StatusBar.TextSize        = 9
-StatusBar.TextXAlignment  = Enum.TextXAlignment.Left
-
-MakeDraggable(MainFrame, TitleBar)
-
-local minimized = false
-MinBtn.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    TweenService:Create(MainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quart), {
-        Size = minimized and UDim2.new(0, W, 0, 40) or UDim2.new(0, W, 0, H)
-    }):Play()
-    ContentHolder.Visible = not minimized
-    TabBar.Visible        = not minimized
-    StatusBar.Visible     = not minimized
-    MinBtn.Text           = minimized and "+" or "−"
-end)
-
--- ============================================================
--- PAGE: AUTO BUY
--- ============================================================
-local PageBuy = Instance.new("ScrollingFrame", ContentHolder)
-PageBuy.Size              = UDim2.new(1, 0, 1, -28)
-PageBuy.Position          = UDim2.new(0, 0, 0, 0)
-PageBuy.BackgroundTransparency = 1
-PageBuy.ScrollBarThickness = 2
-PageBuy.ScrollBarImageColor3 = C.BORDER
-PageBuy.CanvasSize        = UDim2.new(0, 0, 0, 0)
-PageBuy.Visible           = true
-
-local BuyInner = Instance.new("Frame", PageBuy)
-BuyInner.Size             = UDim2.new(1, 0, 0, 0)
-BuyInner.BackgroundTransparency = 1
-BuyInner.AutomaticSize   = Enum.AutomaticSize.Y
-
-local BuyLayout = Instance.new("UIListLayout", BuyInner)
-BuyLayout.SortOrder  = Enum.SortOrder.LayoutOrder
-BuyLayout.Padding    = UDim.new(0, 0)
-
-local BuyPad = Instance.new("Frame", BuyInner)
-BuyPad.LayoutOrder      = 0
-BuyPad.Size             = UDim2.new(1, 0, 0, 8)
-BuyPad.BackgroundTransparency = 1
-
-local function AddToggleRow(parent, order, label, initVal, cb)
-    local Wrap = Instance.new("Frame", parent)
-    Wrap.LayoutOrder       = order
-    Wrap.Size              = UDim2.new(1, 0, 0, 36)
-    Wrap.BackgroundTransparency = 1
-    MakeToggle(Wrap, label, initVal, 3, cb)
-    return Wrap
-end
-
-AddToggleRow(BuyInner, 1, "Auto Buy Aktif", Config.AutoBuy, function(v)
-    Config.AutoBuy = v
+MasterBtn.MouseButton1Click:Connect(function()
+    Config.AutoBuy = not Config.AutoBuy
     SaveConfig()
-    StatusBar.Text = v and "Auto Buy: AKTIF — menunggu pet..." or "Auto Buy: Nonaktif"
+    MasterRow.BackgroundColor3 = Config.AutoBuy and C.BG_CARD or C.BG_TAB
+    MasterStroke.Color         = Config.AutoBuy and C.ACCENT or C.BORDER
+    MasterTxt.TextColor3       = Config.AutoBuy and C.TEXT_PRI or C.TEXT_SEC
+    MasterBtn.Text             = Config.AutoBuy and "ON" or "OFF"
+    MasterBtn.TextColor3       = Config.AutoBuy and C.ACCENT or C.TEXT_SEC
+
+    if Config.AutoBuy then
+        local Map       = workspace:FindFirstChild("Map")
+        local PetFolder = Map and Map:FindFirstChild("WildPetSpawns")
+        if PetFolder then
+            for _, o in ipairs(PetFolder:GetDescendants()) do CekPetLokal(o) end
+        end
+    end
 end)
 
-local BuyDiv1 = Instance.new("Frame", BuyInner)
-BuyDiv1.LayoutOrder     = 2
-BuyDiv1.Size            = UDim2.new(1, -24, 0, 1)
-BuyDiv1.BackgroundColor3 = C.BORDER
-BuyDiv1.BorderSizePixel  = 0
-local BuyDiv1Pad = Instance.new("UIPadding", BuyDiv1)
-BuyDiv1Pad.PaddingLeft  = UDim.new(0, 12)
-BuyDiv1Pad.PaddingRight = UDim.new(0, 12)
+-- ROW: ANTI STEAL TOGGLE
+local AntiStealRow = Instance.new("Frame", ContentFrame)
+AntiStealRow.Size            = UDim2.new(1, -20, 0, 35)
+AntiStealRow.Position        = UDim2.new(0, 10, 0, 52)
+AntiStealRow.BackgroundColor3 = Config.AntiSteal and C.BG_CARD or C.BG_TAB
+AntiStealRow.BorderSizePixel = 0
+Instance.new("UICorner", AntiStealRow).CornerRadius = UDim.new(0, 6)
+local AntiStealStroke = Instance.new("UIStroke", AntiStealRow)
+AntiStealStroke.Color = Config.AntiSteal and C.GREEN or C.BORDER
 
-local BuySecLabel = Instance.new("Frame", BuyInner)
-BuySecLabel.LayoutOrder = 3
-BuySecLabel.Size        = UDim2.new(1, 0, 0, 28)
-BuySecLabel.BackgroundTransparency = 1
+local AntiStealTxt = Instance.new("TextLabel", AntiStealRow)
+AntiStealTxt.Size               = UDim2.new(1, -60, 1, 0)
+AntiStealTxt.Position           = UDim2.new(0, 10, 0, 0)
+AntiStealTxt.BackgroundTransparency = 1
+AntiStealTxt.Text               = "ANTI STEAL (SKIP JIKA SUDAH DIBELI)"
+AntiStealTxt.TextColor3         = Config.AntiSteal and C.TEXT_PRI or C.TEXT_SEC
+AntiStealTxt.Font               = Enum.Font.GothamBold
+AntiStealTxt.TextSize           = 9
+AntiStealTxt.TextXAlignment     = Enum.TextXAlignment.Left
 
-local BuySecTxt = Instance.new("TextLabel", BuySecLabel)
-BuySecTxt.Size         = UDim2.new(1, -24, 1, 0)
-BuySecTxt.Position     = UDim2.new(0, 12, 0, 0)
-BuySecTxt.BackgroundTransparency = 1
-BuySecTxt.Text         = "PILIH PET TARGET"
-BuySecTxt.TextColor3   = C.TEXT_SEC
-BuySecTxt.Font         = Enum.Font.GothamBold
-BuySecTxt.TextSize     = 9
-BuySecTxt.TextXAlignment = Enum.TextXAlignment.Left
+local AntiStealBtn = Instance.new("TextButton", AntiStealRow)
+AntiStealBtn.Size               = UDim2.new(1, 0, 1, 0)
+AntiStealBtn.BackgroundTransparency = 1
+AntiStealBtn.Text               = Config.AntiSteal and "ON" or "OFF"
+AntiStealBtn.TextColor3         = Config.AntiSteal and C.GREEN or C.TEXT_SEC
+AntiStealBtn.Font               = Enum.Font.GothamBold
+AntiStealBtn.TextSize           = 10
+AntiStealBtn.TextXAlignment     = Enum.TextXAlignment.Right
+local AntiStealPad = Instance.new("UIPadding", AntiStealBtn)
+AntiStealPad.PaddingRight = UDim.new(0, 12)
+
+AntiStealBtn.MouseButton1Click:Connect(function()
+    Config.AntiSteal = not Config.AntiSteal
+    SaveConfig()
+    AntiStealRow.BackgroundColor3 = Config.AntiSteal and C.BG_CARD or C.BG_TAB
+    AntiStealStroke.Color         = Config.AntiSteal and C.GREEN or C.BORDER
+    AntiStealTxt.TextColor3       = Config.AntiSteal and C.TEXT_PRI or C.TEXT_SEC
+    AntiStealBtn.Text             = Config.AntiSteal and "ON" or "OFF"
+    AntiStealBtn.TextColor3       = Config.AntiSteal and C.GREEN or C.TEXT_SEC
+end)
+
+-- STATUS LABEL
+local StatusLbl = Instance.new("TextLabel", ContentFrame)
+StatusLbl.Size               = UDim2.new(1, -20, 0, 18)
+StatusLbl.Position           = UDim2.new(0, 10, 0, 94)
+StatusLbl.BackgroundTransparency = 1
+StatusLbl.Text               = "Status: Menunggu pet..."
+StatusLbl.TextColor3         = C.TEXT_SEC
+StatusLbl.Font               = Enum.Font.GothamMedium
+StatusLbl.TextSize           = 9
+StatusLbl.TextXAlignment     = Enum.TextXAlignment.Left
+
+local function SetStatus(msg, warna)
+    StatusLbl.Text       = "Status: " .. msg
+    StatusLbl.TextColor3 = warna or C.TEXT_SEC
+end
+
+-- SCROLLING LIST PET TARGET
+local BuyScroll = Instance.new("ScrollingFrame", ContentFrame)
+BuyScroll.Size                = UDim2.new(1, -20, 1, -120)
+BuyScroll.Position            = UDim2.new(0, 10, 0, 118)
+BuyScroll.BackgroundTransparency = 1
+BuyScroll.BorderSizePixel     = 0
+BuyScroll.ScrollBarThickness  = 2
+BuyScroll.ScrollBarImageColor3 = C.BORDER
+
+local BuyLayout = Instance.new("UIListLayout", BuyScroll)
+BuyLayout.SortOrder = Enum.SortOrder.LayoutOrder
+BuyLayout.Padding   = UDim.new(0, 4)
 
 for idx, namaPet in ipairs(ListSemuaPet) do
-    local meta    = PetMetadata[namaPet] or { Rarity = "Common", Tier = 1 }
-    local rarCol  = RarityColor[meta.Rarity] or C.TEXT_SEC
-    local isActive = Config.Targets[namaPet] or false
+    local isTarget = Config.Targets[namaPet] or false
 
-    local RowWrap = Instance.new("Frame", BuyInner)
-    RowWrap.LayoutOrder      = 10 + idx
-    RowWrap.Size             = UDim2.new(1, 0, 0, 36)
-    RowWrap.BackgroundTransparency = 1
-
-    local Row = Instance.new("TextButton", RowWrap)
-    Row.Size             = UDim2.new(1, -24, 0, 28)
-    Row.Position         = UDim2.new(0, 12, 0, 4)
-    Row.BackgroundColor3 = isActive and C.BG3 or C.BG2
-    Row.BorderSizePixel  = 0
-    Row.Text             = ""
-    Row.AutoButtonColor  = false
-    Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 7)
+    local Row = Instance.new("TextButton", BuyScroll)
+    Row.LayoutOrder       = idx
+    Row.Size              = UDim2.new(1, -6, 0, 28)
+    Row.BackgroundColor3  = isTarget and C.BG_CARD or C.BG_TAB
+    Row.BorderSizePixel   = 0
+    Row.Text              = ""
+    Row.AutoButtonColor   = false
+    Instance.new("UICorner", Row).CornerRadius = UDim.new(0, 5)
 
     local RowStroke = Instance.new("UIStroke", Row)
-    RowStroke.Color     = isActive and C.ACCENT or C.BORDER
-    RowStroke.Thickness = 1
+    RowStroke.Color = isTarget and C.ACCENT or C.BORDER
 
     local NLbl = Instance.new("TextLabel", Row)
-    NLbl.Size          = UDim2.new(0, 140, 1, 0)
-    NLbl.Position      = UDim2.new(0, 12, 0, 0)
+    NLbl.Size               = UDim2.new(1, -40, 1, 0)
+    NLbl.Position           = UDim2.new(0, 10, 0, 0)
     NLbl.BackgroundTransparency = 1
-    NLbl.Text          = namaPet
-    NLbl.TextColor3    = isActive and C.TEXT_PRI or C.ACCENT_DIM
-    NLbl.Font          = Enum.Font.GothamMedium
-    NLbl.TextSize      = 11
-    NLbl.TextXAlignment = Enum.TextXAlignment.Left
+    NLbl.Text               = namaPet
+    NLbl.TextColor3         = isTarget and C.TEXT_PRI or C.TEXT_SEC
+    NLbl.Font               = Enum.Font.GothamMedium
+    NLbl.TextSize           = 10
+    NLbl.TextXAlignment     = Enum.TextXAlignment.Left
 
-    local RLbl = Instance.new("TextLabel", Row)
-    RLbl.Size          = UDim2.new(0, 80, 1, 0)
-    RLbl.Position      = UDim2.new(1, -110, 0, 0)
-    RLbl.BackgroundTransparency = 1
-    RLbl.Text          = meta.Rarity
-    RLbl.TextColor3    = rarCol
-    RLbl.Font          = Enum.Font.GothamBold
-    RLbl.TextSize      = 10
-    RLbl.TextXAlignment = Enum.TextXAlignment.Right
-
-    local ChkLbl = Instance.new("TextLabel", Row)
-    ChkLbl.Size          = UDim2.new(0, 20, 1, 0)
-    ChkLbl.Position      = UDim2.new(1, -24, 0, 0)
-    ChkLbl.BackgroundTransparency = 1
-    ChkLbl.Text          = isActive and "✓" or ""
-    ChkLbl.TextColor3    = C.ACCENT
-    ChkLbl.Font          = Enum.Font.GothamBold
-    ChkLbl.TextSize      = 12
+    local Chk = Instance.new("TextLabel", Row)
+    Chk.Size               = UDim2.new(0, 20, 1, 0)
+    Chk.Position           = UDim2.new(1, -25, 0, 0)
+    Chk.BackgroundTransparency = 1
+    Chk.Text               = isTarget and "✓" or ""
+    Chk.TextColor3         = C.ACCENT
+    Chk.Font               = Enum.Font.GothamBold
+    Chk.TextSize           = 10
 
     Row.MouseButton1Click:Connect(function()
         Config.Targets[namaPet] = not (Config.Targets[namaPet] or false)
-        local aktif = Config.Targets[namaPet]
         SaveConfig()
-        Row.BackgroundColor3 = aktif and C.BG3 or C.BG2
+        local aktif = Config.Targets[namaPet]
+        Row.BackgroundColor3 = aktif and C.BG_CARD or C.BG_TAB
         RowStroke.Color      = aktif and C.ACCENT or C.BORDER
-        NLbl.TextColor3      = aktif and C.TEXT_PRI or C.ACCENT_DIM
-        ChkLbl.Text          = aktif and "✓" or ""
-    end)
+        NLbl.TextColor3      = aktif and C.TEXT_PRI or C.TEXT_SEC
+        Chk.Text             = aktif and "✓" or ""
 
-    Row.MouseEnter:Connect(function()
-        if not (Config.Targets[namaPet]) then
-            TweenService:Create(Row, TweenInfo.new(0.1), { BackgroundColor3 = C.BG3 }):Play()
-        end
-    end)
-    Row.MouseLeave:Connect(function()
-        if not (Config.Targets[namaPet]) then
-            TweenService:Create(Row, TweenInfo.new(0.1), { BackgroundColor3 = C.BG2 }):Play()
-        end
-    end)
-end
-
-task.defer(function()
-    PageBuy.CanvasSize = UDim2.new(0, 0, 0, BuyLayout.AbsoluteContentSize.Y + 12)
-end)
-
--- ============================================================
--- PAGE: AUTO HOP
--- ============================================================
-local PageHop = Instance.new("Frame", ContentHolder)
-PageHop.Size              = UDim2.new(1, 0, 1, -28)
-PageHop.Position          = UDim2.new(0, 0, 0, 0)
-PageHop.BackgroundTransparency = 1
-PageHop.Visible           = false
-
-MakeToggle(PageHop, "Auto Hop Aktif", Config.AutoHop, 12, function(v)
-    Config.AutoHop = v
-    SaveConfig()
-    StatusBar.Text = v and "Auto Hop: AKTIF — mencari server..." or "Auto Hop: Nonaktif"
-end)
-
-MakeDivider(PageHop, 50)
-
-local TierBox = Instance.new("Frame", PageHop)
-TierBox.Size            = UDim2.new(1, -24, 0, 120)
-TierBox.Position        = UDim2.new(0, 12, 0, 58)
-TierBox.BackgroundColor3 = C.BG2
-TierBox.BorderSizePixel  = 0
-Instance.new("UICorner", TierBox).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", TierBox).Color = C.BORDER
-
-local TierTitle = Instance.new("TextLabel", TierBox)
-TierTitle.Size          = UDim2.new(1, -16, 0, 20)
-TierTitle.Position      = UDim2.new(0, 12, 0, 10)
-TierTitle.BackgroundTransparency = 1
-TierTitle.Text          = "URUTAN PRIORITAS HOP"
-TierTitle.TextColor3    = C.TEXT_PRI
-TierTitle.Font          = Enum.Font.GothamBold
-TierTitle.TextSize      = 10
-TierTitle.TextXAlignment = Enum.TextXAlignment.Left
-
-local tierLines = {
-    "1.  Super       →  Raccoon · BlackDragon · IceSerpent",
-    "2.  Mythic      →  Unicorn · Monkey · GoldenDragonfly",
-    "3.  Legendary  →  Robin · Bee",
-    "4.  Rare          →  Deer",
-    "5.  Uncommon  →  Owl",
-    "6.  Common     →  Frog · Bunny",
-}
-for i, line in ipairs(tierLines) do
-    local TL = Instance.new("TextLabel", TierBox)
-    TL.Size          = UDim2.new(1, -16, 0, 14)
-    TL.Position      = UDim2.new(0, 12, 0, 26 + (i - 1) * 14)
-    TL.BackgroundTransparency = 1
-    TL.Text          = line
-    TL.TextColor3    = C.TEXT_SEC
-    TL.Font          = Enum.Font.GothamMedium
-    TL.TextSize      = 9
-    TL.TextXAlignment = Enum.TextXAlignment.Left
-end
-
-MakeDivider(PageHop, 192)
-
-local HopInfoLbl = Instance.new("TextLabel", PageHop)
-HopInfoLbl.Size          = UDim2.new(1, -24, 0, 60)
-HopInfoLbl.Position      = UDim2.new(0, 12, 0, 202)
-HopInfoLbl.BackgroundTransparency = 1
-HopInfoLbl.Text          = "Jika beberapa pet target tersedia di server berbeda, sistem akan memilih server dengan pet tier tertinggi yang tidak penuh.\n\nData diperbarui dari Live Server setiap 5 detik."
-HopInfoLbl.TextColor3    = C.TEXT_SEC
-HopInfoLbl.Font          = Enum.Font.GothamMedium
-HopInfoLbl.TextSize      = 10
-HopInfoLbl.TextXAlignment = Enum.TextXAlignment.Left
-HopInfoLbl.TextWrapped   = true
-
--- ============================================================
--- PAGE: LIVE SERVER
--- ============================================================
-local PageLive = Instance.new("Frame", ContentHolder)
-PageLive.Size              = UDim2.new(1, 0, 1, -28)
-PageLive.Position          = UDim2.new(0, 0, 0, 0)
-PageLive.BackgroundTransparency = 1
-PageLive.Visible           = false
-
-local LiveToggleInfo = Instance.new("TextLabel", PageLive)
-LiveToggleInfo.Size          = UDim2.new(1, -24, 0, 36)
-LiveToggleInfo.Position      = UDim2.new(0, 12, 0, 12)
-LiveToggleInfo.BackgroundTransparency = 1
-LiveToggleInfo.Text          = "Window Live Server menampilkan semua pet target yang terdeteksi di server manapun secara real-time."
-LiveToggleInfo.TextColor3    = C.TEXT_SEC
-LiveToggleInfo.Font          = Enum.Font.GothamMedium
-LiveToggleInfo.TextSize      = 10
-LiveToggleInfo.TextXAlignment = Enum.TextXAlignment.Left
-LiveToggleInfo.TextWrapped   = true
-
-local liveWindowOpen = false
-local LiveWindowRef  = nil
-
-local OpenLiveBtn = Instance.new("TextButton", PageLive)
-OpenLiveBtn.Size             = UDim2.new(1, -24, 0, 34)
-OpenLiveBtn.Position         = UDim2.new(0, 12, 0, 58)
-OpenLiveBtn.BackgroundColor3 = C.BG2
-OpenLiveBtn.BorderSizePixel  = 0
-OpenLiveBtn.Text             = "BUKA LIVE SERVER"
-OpenLiveBtn.TextColor3       = C.TEXT_PRI
-OpenLiveBtn.Font             = Enum.Font.GothamBold
-OpenLiveBtn.TextSize         = 11
-OpenLiveBtn.AutoButtonColor  = false
-Instance.new("UICorner", OpenLiveBtn).CornerRadius = UDim.new(0, 8)
-Instance.new("UIStroke", OpenLiveBtn).Color = C.BORDER
-
-OpenLiveBtn.MouseEnter:Connect(function()
-    TweenService:Create(OpenLiveBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.BG3 }):Play()
-end)
-OpenLiveBtn.MouseLeave:Connect(function()
-    TweenService:Create(OpenLiveBtn, TweenInfo.new(0.12), { BackgroundColor3 = C.BG2 }):Play()
-end)
-
--- ============================================================
--- TAB SWITCH LOGIC
--- ============================================================
-local pages   = { PageBuy, PageHop, PageLive }
-local curTab  = 1
-local tabW    = (W - 24) / 3
-
-local function SwitchTab(idx)
-    curTab = idx
-    for i, page in ipairs(pages) do
-        page.Visible = (i == idx)
-        TabBtns[i].TextColor3 = (i == idx) and C.TAB_ACTIVE or C.TAB_IDLE
-    end
-    TweenService:Create(TabIndicator, TweenInfo.new(0.18, Enum.EasingStyle.Quart), {
-        Position = UDim2.new(0, 8 + (idx - 1) * tabW, 1, -2)
-    }):Play()
-end
-
-for i, btn in ipairs(TabBtns) do
-    btn.MouseButton1Click:Connect(function()
-        SwitchTab(i)
-    end)
-end
-
-SwitchTab(1)
-
--- ============================================================
--- ▐█ LIVE SERVER POPUP WINDOW FUNCTIONS (STRUKTUR DEKLARASI TETAP AMAN)
--- ============================================================
-
--- [1] RENDER BARIS ENTRY DATA SERVER (DI-EVALUASI KELUAR AGAR TERISOLASI)
-local function BuatEntryLive(LScroll, order, namaPet, jobId, sisaDetik, pCur, pMax)
-    local meta   = PetMetadata[namaPet] or { Rarity = "Common", Tier = 1 }
-    local rarCol = RarityColor[meta.Rarity] or C.TEXT_SEC
-    local isFull = (pCur >= pMax)
-    local isHere = (jobId == game.JobId)
-
-    local Card = Instance.new("Frame", LScroll)
-    Card.LayoutOrder      = order
-    Card.Size             = UDim2.new(1, -10, 0, 62)
-    Card.BackgroundColor3 = C.BG2
-    Card.BorderSizePixel  = 0
-    Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 8)
-
-    local CardStroke = Instance.new("UIStroke", Card)
-    CardStroke.Color     = C.BORDER
-    CardStroke.Thickness = 1
-
-    local Strip = Instance.new("Frame", Card)
-    Strip.Size            = UDim2.new(0, 2, 1, -14)
-    Strip.Position        = UDim2.new(0, 6, 0, 7)
-    Strip.BackgroundColor3 = isFull and C.TEXT_SEC or C.ACCENT
-    Strip.BorderSizePixel  = 0
-    Instance.new("UICorner", Strip).CornerRadius = UDim.new(1, 0)
-
-    local NLbl = Instance.new("TextLabel", Card)
-    NLbl.Size          = UDim2.new(0, 140, 0, 20)
-    NLbl.Position      = UDim2.new(0, 18, 0, 8)
-    NLbl.BackgroundTransparency = 1
-    NLbl.Text          = namaPet
-    NLbl.TextColor3    = isFull and C.TEXT_SEC or C.TEXT_PRI
-    NLbl.Font          = Enum.Font.GothamBold
-    NLbl.TextSize      = 12
-    NLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-    local RLbl = Instance.new("TextLabel", Card)
-    RLbl.Size          = UDim2.new(0, 90, 0, 20)
-    RLbl.Position      = UDim2.new(1, -96, 0, 8)
-    RLbl.BackgroundTransparency = 1
-    RLbl.Text          = meta.Rarity
-    RLbl.TextColor3    = isFull and C.TEXT_SEC or rarCol
-    RLbl.Font          = Enum.Font.GothamBold
-    RLbl.TextSize      = 10
-    RLbl.TextXAlignment = Enum.TextXAlignment.Right
-
-    local m = math.floor(sisaDetik / 60)
-    local s = sisaDetik % 60
-    local playerText = isFull and (pCur .. "/" .. pMax .. "  PENUH") or (pCur .. "/" .. pMax .. " pemain")
-    local tagText    = isHere and "  [SERVER INI]" or ""
-
-    local Sub1 = Instance.new("TextLabel", Card)
-    Sub1.Size          = UDim2.new(1, -20, 0, 14)
-    Sub1.Position      = UDim2.new(0, 18, 0, 28)
-    Sub1.BackgroundTransparency = 1
-    Sub1.Text          = string.sub(jobId, 1, 10) .. "…" .. tagText .. "   " .. playerText
-    Sub1.TextColor3    = C.TEXT_SEC
-    Sub1.Font          = Enum.Font.GothamMedium
-    Sub1.TextSize      = 9
-    Sub1.TextXAlignment = Enum.TextXAlignment.Left
-
-    local Sub2 = Instance.new("TextLabel", Card)
-    Sub2.Size          = UDim2.new(1, -20, 0, 14)
-    Sub2.Position      = UDim2.new(0, 18, 0, 42)
-    Sub2.BackgroundTransparency = 1
-    Sub2.Text          = "Despawn dalam " .. string.format("%dm %02ds", m, s)
-    Sub2.TextColor3    = sisaDetik < 60 and C.DANGER or C.TEXT_SEC
-    Sub2.Font          = Enum.Font.GothamMedium
-    Sub2.TextSize      = 9
-    Sub2.TextXAlignment = Enum.TextXAlignment.Left
-
-    local ClickBtn = Instance.new("TextButton", Card)
-    ClickBtn.Size             = UDim2.new(1, 0, 1, 0)
-    ClickBtn.BackgroundTransparency = 1
-    ClickBtn.Text             = ""
-
-    ClickBtn.MouseButton1Click:Connect(function()
-        if isHere then
-            StatusBar.Text = "Kamu sudah di server ini."
-            return
-        end
-        if isFull then
-            StatusBar.Text = "Server penuh, pilih yang lain."
-            return
-        end
-        if sedangTeleport then
-            StatusBar.Text = "Tunggu, sedang mencoba terhubung ke server..."
-            return
-        end
-
-        sedangTeleport = true
-        StatusBar.Text = "Joining " .. string.sub(jobId, 1, 8) .. "…"
-        NLbl.Text = "Joining..."
-
-        task.spawn(function()
-            local sukses, err = pcall(function()
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, LocalPlayer)
-            end)
-
-            if not sukses then
-                warn("Teleport Gagal: ", err)
-                StatusBar.Text = "Gagal join! Mencoba reset dalam 3 detik..."
-                task.wait(3) 
-                sedangTeleport = false
-                NLbl.Text = namaPet 
-                StatusBar.Text = "Pet Finder V31  ·  Ready"
-            else
-                task.delay(10, function() sedangTeleport = false end)
+        if aktif and Config.AutoBuy then
+            local Map       = workspace:FindFirstChild("Map")
+            local PetFolder = Map and Map:FindFirstChild("WildPetSpawns")
+            if PetFolder then
+                for _, o in ipairs(PetFolder:GetDescendants()) do CekPetLokal(o) end
             end
-        end)
+        end
     end)
 end
+BuyScroll.CanvasSize = UDim2.new(0, 0, 0, #ListSemuaPet * 32)
 
--- [2] MAIN POPUP WINDOW MAKER
-local function BuatLiveWindow()
-    if LiveWindowRef then
-        local old = GuiParent:FindFirstChild("PetFinderLiveV31")
-        if old then old:Destroy() end
-        LiveWindowRef = nil
-    end
+-- ============================================================
+-- CORE ENGINE: FIX TELEPORT & PROXIMITY LINE OF SIGHT BYPASS
+-- ============================================================
 
-    local LSG = Instance.new("ScreenGui", GuiParent)
-    LSG.Name          = "PetFinderLiveV31"
-    LSG.ResetOnSpawn  = false
-    LSG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    LiveWindowRef     = LSG
+local WAKTU_VERIFIKASI = 30 
+local sedangMemproses  = false 
 
-    local LW, LH = 300, 400
+local function CariPetDiBackpack(namaPet)
+    local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
+    local char     = LocalPlayer.Character
 
-    local LFrame = Instance.new("Frame", LSG)
-    LFrame.Name            = "LiveFrame"
-    LFrame.Size            = UDim2.new(0, LW, 0, LH)
-    LFrame.Position        = UDim2.new(0, 360, 0, 100)
-    LFrame.BackgroundColor3 = C.BG
-    LFrame.BorderSizePixel  = 0
-    Instance.new("UICorner", LFrame).CornerRadius = UDim.new(0, 12)
-    Instance.new("UIStroke", LFrame).Color = C.BORDER
-
-    local LTitleBar = Instance.new("Frame", LFrame)
-    LTitleBar.Size            = UDim2.new(1, 0, 0, 40)
-    LTitleBar.BackgroundColor3 = C.BG2
-    LTitleBar.BorderSizePixel  = 0
-    Instance.new("UICorner", LTitleBar).CornerRadius = UDim.new(0, 12)
-
-    local LTFix = Instance.new("Frame", LTitleBar)
-    LTFix.Size            = UDim2.new(1, 0, 0, 12)
-    LTFix.Position        = UDim2.new(0, 0, 1, -12)
-    LTFix.BackgroundColor3 = C.BG2
-    LTFix.BorderSizePixel  = 0
-
-    local LDot = Instance.new("Frame", LTitleBar)
-    LDot.Size            = UDim2.new(0, 6, 0, 6)
-    LDot.Position        = UDim2.new(0, 14, 0.5, -3)
-    LDot.BackgroundColor3 = C.ACCENT
-    LDot.BorderSizePixel  = 0
-    Instance.new("UICorner", LDot).CornerRadius = UDim.new(1, 0)
-
-    local LTitleLbl = Instance.new("TextLabel", LTitleBar)
-    LTitleLbl.Size           = UDim2.new(1, -120, 1, 0)
-    LTitleLbl.Position       = UDim2.new(0, 28, 0, 0)
-    LTitleLbl.BackgroundTransparency = 1
-    LTitleLbl.Text           = "Live Server"
-    LTitleLbl.TextColor3     = C.TEXT_PRI
-    LTitleLbl.Font           = Enum.Font.GothamBold
-    LTitleLbl.TextSize       = 13
-    LTitleLbl.TextXAlignment = Enum.TextXAlignment.Left
-
-    local RefreshLbl = Instance.new("TextLabel", LTitleBar)
-    RefreshLbl.Size          = UDim2.new(0, 80, 1, 0)
-    RefreshLbl.Position      = UDim2.new(1, -118, 0, 0)
-    RefreshLbl.BackgroundTransparency = 1
-    RefreshLbl.Text          = "5s"
-    RefreshLbl.TextColor3    = C.TEXT_SEC
-    RefreshLbl.Font          = Enum.Font.GothamMedium
-    RefreshLbl.TextSize      = 9
-    RefreshLbl.TextXAlignment = Enum.TextXAlignment.Right
-
-    local CloseBtn = Instance.new("TextButton", LTitleBar)
-    CloseBtn.Size            = UDim2.new(0, 24, 0, 24)
-    CloseBtn.Position        = UDim2.new(1, -32, 0.5, -12)
-    CloseBtn.BackgroundColor3 = C.BG3
-    CloseBtn.Text            = "✕"
-    CloseBtn.TextColor3      = C.ACCENT_DIM
-    CloseBtn.Font            = Enum.Font.GothamBold
-    CloseBtn.TextSize        = 11
-    CloseBtn.BorderSizePixel  = 0
-    Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
-
-    CloseBtn.MouseButton1Click:Connect(function()
-        liveWindowOpen = false
-        OpenLiveBtn.Text = "BUKA LIVE SERVER"
-        LSG:Destroy()
-        LiveWindowRef = nil
-    end)
-
-    MakeDivider(LFrame, 40)
-
-    local LScroll = Instance.new("ScrollingFrame", LFrame)
-    LScroll.Size              = UDim2.new(1, -10, 1, -50)
-    LScroll.Position          = UDim2.new(0, 5, 0, 46)
-    LScroll.BackgroundTransparency = 1
-    LScroll.ScrollBarThickness = 2
-    LScroll.ScrollBarImageColor3 = C.BORDER
-    LScroll.CanvasSize        = UDim2.new(0, 0, 0, 0)
-    LScroll.BorderSizePixel   = 0
-
-    local LLayout = Instance.new("UIListLayout", LScroll)
-    LLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    LLayout.Padding   = UDim.new(0, 4)
-
-    local LPlaceholder = Instance.new("TextLabel", LScroll)
-    LPlaceholder.Size          = UDim2.new(1, 0, 0, 80)
-    LPlaceholder.BackgroundTransparency = 1
-    LPlaceholder.Text          = "Memuat data...\nPilih pet target di tab Auto Buy terlebih dahulu."
-    LPlaceholder.TextColor3    = C.TEXT_SEC
-    LPlaceholder.Font          = Enum.Font.GothamMedium
-    LPlaceholder.TextSize      = 10
-    LPlaceholder.TextXAlignment = Enum.TextXAlignment.Center
-    LPlaceholder.TextWrapped   = true
-    LPlaceholder.Visible       = true
-
-    MakeDraggable(LFrame, LTitleBar)
-
-    -- [3] REFRESH LOOP DATABASE HOOKED IN SEPARATED THREAD
-    task.spawn(function()
-        while LiveWindowRef == LSG do
-            for i = 5, 1, -1 do
-                if LiveWindowRef ~= LSG then break end
-                RefreshLbl.Text = "refresh " .. i .. "s"
-                task.wait(1)
+    local function scanFolder(folder)
+        if not folder then return false end
+        for _, item in ipairs(folder:GetChildren()) do
+            if string.find(item.Name:lower(), namaPet:lower()) then
+                return true
             end
-            if LiveWindowRef ~= LSG then break end
-
-            RefreshLbl.Text = "memuat..."
-            if not HttpRequest then task.wait(5) continue end
-
-            local ok, res = pcall(function()
-                return HttpRequest({ Url = FirebaseURL .. "LivePets.json", Method = "GET" })
-            end)
-
-            if ok and res and res.Body then
-                local okD, data = pcall(function() return HttpService:JSONDecode(res.Body) end)
-
-                if okD and type(data) == "table" then
-                    local entries = {}
-                    local now = os.time()
-
-                    for serverJobId, subPets in pairs(data) do
-                        if type(subPets) == "table" then
-                            for _, info in pairs(subPets) do
-                                if type(info) == "table" and info.PetName and info.Timestamp then
-                                    local sisa = PET_LIFETIME - (now - info.Timestamp)
-                                    if sisa > 0 and Config.Targets[info.PetName] == true then
-                                        local meta = PetMetadata[info.PetName] or { Tier = 1 }
-                                        table.insert(entries, {
-                                            JobId     = serverJobId,
-                                            PetName   = info.PetName,
-                                            Tier      = meta.Tier,
-                                            SisaDetik = sisa,
-                                            PCur      = info.CurrentPlayers or 1,
-                                            PMax      = info.MaxPlayers or 8,
-                                        })
-                                    elseif sisa <= 0 then
-                                        pcall(function()
-                                            HttpRequest({
-                                                Url    = FirebaseURL .. "LivePets/" .. serverJobId .. ".json",
-                                                Method = "DELETE"
-                                            })
-                                        end)
-                                    end
-                                end
-                            end
-                        end
-                    end
-
-                    table.sort(entries, function(a, b)
-                        if a.Tier ~= b.Tier then return a.Tier > b.Tier end
-                        return a.SisaDetik > b.SisaDetik
-                    end)
-
-                    for _, ch in ipairs(LScroll:GetChildren()) do
-                        if ch:IsA("Frame") then ch:Destroy() end
-                    end
-
-                    if #entries == 0 then
-                        LPlaceholder.Text    = "Tidak ada pet target yang ditemukan.\nPastikan bot sedang berjalan."
-                        LPlaceholder.Visible = true
-                    else
-                        LPlaceholder.Visible = false
-                        for i, entry in ipairs(entries) do
-                            BuatEntryLive(LScroll, i, entry.PetName, entry.JobId, entry.SisaDetik, entry.PCur, entry.PMax)
-                        end
-                        LScroll.CanvasSize = UDim2.new(0, 0, 0, LLayout.AbsoluteContentSize.Y + 8)
-                    end
-
-                    if Config.AutoHop and #entries > 0 then
-                        for _, entry in ipairs(entries) do
-                            if entry.JobId ~= game.JobId and entry.PCur < entry.PMax then
-                                StatusBar.Text = "Auto Hop → " .. entry.PetName .. " [" .. (PetMetadata[entry.PetName] or {Rarity="?"}).Rarity .. "]"
-                                pcall(function()
-                                    TeleportService:TeleportToPlaceInstance(game.PlaceId, entry.JobId, LocalPlayer)
-                                end)
-                                task.wait(3)
-                                break
-                            end
-                        end
-                    end
+            for _, desc in ipairs(item:GetDescendants()) do
+                if string.find(desc.Name:lower(), namaPet:lower()) then
+                    return true
                 end
             end
-            RefreshLbl.Text = "refresh 5s"
         end
-    end)
-    return LSG
-end
+        return false
+    end
 
--- Tombol buka/tutup live window
-OpenLiveBtn.MouseButton1Click:Connect(function()
-    liveWindowOpen = not liveWindowOpen
-    if liveWindowOpen then
-        OpenLiveBtn.Text = "TUTUP LIVE SERVER"
-        BuatLiveWindow()
-    else
-        OpenLiveBtn.Text = "BUKA LIVE SERVER"
-        if LiveWindowRef then
-            LiveWindowRef:Destroy()
-            LiveWindowRef = nil
+    if scanFolder(backpack) then return true end
+    if scanFolder(char) then return true end
+
+    local playerData = LocalPlayer:FindFirstChild("PlayerData") or LocalPlayer:FindFirstChild("Data")
+    if playerData then
+        local petData = playerData:FindFirstChild("Pets") or playerData:FindFirstChild("OwnedPets")
+        if petData then
+            if scanFolder(petData) then return true end
         end
     end
-end)
 
--- ============================================================
--- AUTO BUY HOOK: WildPetSpawns
--- ============================================================
-local function CekPetLokal(item)
+    return false
+end
+
+-- Eksekusi tombol beli (Dioptimalkan agar tidak miss/gagal akibat kamera)
+local function TekanjPetPrompt(item)
+    -- Paksakan kamera turun ke player sebelum mengeksekusi prompt
+    PaksaKameraKePlayer()
+    task.wait(0.05)
+
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local part = item:IsA("BasePart") and item
+        or item:FindFirstChildWhichIsA("BasePart", true)
+        or (item:IsA("Model") and item.PrimaryPart)
+    if not part then return end
+
+    local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
+    if not prompt and item.Parent then
+        prompt = item.Parent:FindFirstChildWhichIsA("ProximityPrompt", true)
+    end
+    if not prompt then return end
+
+    -- BYPASS UTAMA: Matikan proteksi pandangan mata kamera secara paksa
+    prompt.RequiresLineOfSight = false 
+    prompt.HoldDuration = 0
+    prompt.MaxDistance = 100 
+
+    -- Teleport sejajar di depan pet (bukan melayang di atas langit)
+    root.CFrame = part.CFrame * CFrame.new(0, 0, 2)
+    task.wait(0.15) -- Tunggu posisi sinkron di server
+
+    -- Eksekusi Pembelian Aman
+    if fireproximityprompt then
+        pcall(function() fireproximityprompt(prompt) end)
+    else
+        pcall(function() 
+            prompt:InputHoldBegin()
+            task.wait(0.12)
+            prompt:InputHoldEnd()
+        end)
+    end
+    
+    local hum = char:FindFirstChildWhichIsA("Humanoid")
+    if hum then root.Anchored = false end
+end
+
+local function JalankanCountdown(namaPet, totalDetik, onTick)
+    for i = totalDetik, 1, -1 do
+        SetStatus(
+            "⏳ Loading beli " .. namaPet .. "... (" .. i .. "s)",
+            Color3.fromRGB(255, 200, 50)
+        )
+        for _ = 1, 10 do
+            task.wait(0.1)
+            if onTick and onTick() then return true end
+        end
+    end
+    return false
+end
+
+CekPetLokal = function(item)
     if not item or not item.Parent then return end
-    if not Config.AutoBuy then return end
+    if sedangMemproses then return end
 
-    local namaLower = item.Name:lower()
-    local petCocok  = nil
+    local namaLower   = item.Name:lower()
+    local targetValid = nil
 
-    for targetNama, aktif in pairs(Config.Targets) do
-        if aktif and string.find(namaLower, targetNama:lower()) then
-            petCocok = targetNama
+    for tName, aktif in pairs(Config.Targets) do
+        if aktif and string.find(namaLower, tName:lower()) then
+            targetValid = tName
             break
         end
     end
 
-    if not petCocok then return end
+    if not targetValid then return end
+    if not Config.AutoBuy then return end
 
-    local targetPart = item:IsA("BasePart") and item
-        or item:FindFirstChildWhichIsA("BasePart", true)
-        or item.PrimaryPart
+    local petKey = tostring(item) .. "_" .. targetValid
+    if Config.AntiSteal and PetSudahDibeli[petKey] then
+        SetStatus("Skip " .. targetValid .. " (Anti Steal aktif)", C.TEXT_SEC)
+        return
+    end
 
-    local character = LocalPlayer.Character
-    local root      = character and character:FindFirstChild("HumanoidRootPart")
+    PetSudahDibeli[petKey] = true
+    sedangMemproses        = true
 
-    if root and targetPart then
-        StatusBar.Text = "Auto Buy: " .. petCocok .. " ditemukan!"
-        root.CFrame = targetPart.CFrame
-        task.wait(0.01) -- Dipercepat instan ke 0.01s agar anti-keduluan player lain
+    task.spawn(function()
+        local backpackSebelum = LocalPlayer:FindFirstChildOfClass("Backpack")
+        local jumlahSebelum   = backpackSebelum and #backpackSebelum:GetChildren() or 0
 
-        local prompt = item:FindFirstChildWhichIsA("ProximityPrompt", true)
-        if prompt then
-            prompt.HoldDuration = 0
-            prompt:InputHoldBegin()
-            task.wait(0.01)
-            prompt:InputHoldEnd()
-            if fireproximityprompt then
-                pcall(function() fireproximityprompt(prompt) end)
+        SetStatus("🎯 " .. targetValid .. " ditemukan! Menekan tombol beli...", Color3.fromRGB(255, 200, 50))
+
+        TekanjPetPrompt(item)
+
+        local sukses = JalankanCountdown(targetValid, WAKTU_VERIFIKASI, function()
+            if CariPetDiBackpack(targetValid) then return true end
+            local bp = LocalPlayer:FindFirstChildOfClass("Backpack")
+            if bp and #bp:GetChildren() > jumlahSebelum then return true end
+            return false
+        end)
+
+        if sukses then
+            SetStatus("✅ " .. targetValid .. " BERHASIL DIBELI!", C.GREEN)
+            task.spawn(function()
+                KirimNotifDiscord(targetValid, true)
+            end)
+        else
+            SetStatus("❌ " .. targetValid .. " GAGAL / tidak masuk tas (30s)", Color3.fromRGB(220, 60, 60))
+            task.spawn(function()
+                KirimNotifDiscord(targetValid, false)
+            end)
+            if not Config.AntiSteal then
+                PetSudahDibeli[petKey] = nil
             end
         end
 
-        task.delay(3, function()
-            StatusBar.Text = "Pet Finder V31  ·  Ready"
-        end)
-    end
+        sedangMemproses = false
+    end)
 end
 
 -- ============================================================
--- WORLD DETECTOR (TURBO SPEED MODE & TEMBUS DEEPEST FOLDERS)
+-- HOOKING MAP & WILD PET SPAWNS
 -- ============================================================
 task.spawn(function()
     local ok, Map = pcall(function() return workspace:WaitForChild("Map", 15) end)
     if not ok or not Map then return end
-    
+
     local ok2, PetFolder = pcall(function() return Map:WaitForChild("WildPetSpawns", 15) end)
     if not ok2 or not PetFolder then return end
 
-    local function ProsesObjek(obj)
+    local function HubungkanObjek(obj)
         if obj:IsA("Model") or obj:IsA("BasePart") then
             if obj:IsDescendantOf(PetFolder) then
                 CekPetLokal(obj)
@@ -1047,29 +599,13 @@ task.spawn(function()
         end
     end
 
-    -- [1] SCAN INSTAN UNTUK PET LAMA (Membongkar isi folder inner "Middle")
     task.defer(function()
-        for _, obj in ipairs(PetFolder:GetDescendants()) do
-            ProsesObjek(obj)
-        end
+        for _, o in ipairs(PetFolder:GetDescendants()) do HubungkanObjek(o) end
     end)
 
-    -- [2] SCAN TURBO UNTUK PET BARU (Deteksi real-time instan tanpa wait delay)
-    PetFolder.DescendantAdded:Connect(function(newDescendant)
-        ProsesObjek(newDescendant)
-    end)
-    
-    -- [3] HIGH-FREQUENCY BACKUP LOOP (Setiap 1 Detik untuk AFK Farming stabil)
-    task.spawn(function()
-        while MainSG.Parent do
-            task.wait(1) 
-            if Config.AutoBuy then
-                for _, obj in ipairs(PetFolder:GetDescendants()) do
-                    ProsesObjek(obj)
-                end
-            end
-        end
+    PetFolder.DescendantAdded:Connect(function(newObj)
+        HubungkanObjek(newObj)
     end)
 end)
 
-print("[PetFinder V31] Aktif ✔  |  Main window siap.")
+print("[Pet Finder V33.2] Berhasil Dimuat! Kamera Fix + Proximity Bypass Aktif ✔")
