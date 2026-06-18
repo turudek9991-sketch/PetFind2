@@ -609,7 +609,7 @@ end
 task.spawn(function() while task.wait(3) do pcall(RenderUIRadar) end end)
 
 -- ============================================================
--- SMOOTH REAL-TIME TRACKING & GLUE SYSTEM (VIDEO EXACT MATCH)
+-- FINAL CALIBRATED ENGINE: HYBRID INSTANT CLICKER (ANTI-FREEZE)
 -- ============================================================
 local function MulaiBuyLoop(petModel, targetName, petKey)
     local char = LocalPlayer.Character
@@ -625,10 +625,9 @@ local function MulaiBuyLoop(petModel, targetName, petKey)
 
     local waktuMulai = os.clock()
     local berhasil   = false
-    local clickFired = false
     local WAKTU_TIMEOUT_BARU = 60 
 
-    -- POTONG HOLD DURATION SEKALI DI AWAL BIAR INSTAN
+    -- 🌟 FORCE SET 0 DETIK DI AWAL AGAR MANUAL ATAUPUN OTOMATIS TETAP INSTAN
     pcall(function() 
         prompt.HoldDuration = 0 
     end)
@@ -644,67 +643,73 @@ local function MulaiBuyLoop(petModel, targetName, petKey)
     end)
 
     -- --------------------------------------------------------
-    -- REAL-TIME GLUE INTERACTION (MENGIKUTI GERAKAN PET)
+    -- TELEPORT GLUE LOOP (KUNCI POSISI NYEFEK KE SERVER)
     -- --------------------------------------------------------
-    local KoneksiTracking
-    KoneksiTracking = RunService.Heartbeat:Connect(function(deltaTime)
-        -- Cek validasi keberadaan objek
+    local KoneksiTeleport
+    KoneksiTeleport = RunService.Heartbeat:Connect(function()
         if not petModel or not petModel.Parent or not petModel:IsDescendantOf(workspace) or berhasil or not Config.AutoBuy then
-            if KoneksiTracking then KoneksiTracking:Disconnect() KoneksiTracking = nil end
+            if KoneksiTeleport then KoneksiTeleport:Disconnect() KoneksiTeleport = nil end
             return
         end
 
         local livePart = petModel:IsA("BasePart") and petModel or petModel:FindFirstChildWhichIsA("BasePart", true) or petModel.PrimaryPart
         local livePrompt = petModel:FindFirstChild("BuyPrompt", true) or prompt
 
-        if livePart and root then
-            -- Posisi target persis di depan pet (menyesuaikan secara real-time saat pet bergerak)
-            local targetPosisi = livePart.Position + Vector3.new(0, 0, 0.5)
+        if livePart and root and livePrompt then
+            -- Set posisi karakter nempel rapat di pet agar validasi jarak server lolos
+            local targetPosisi = livePart.Position + Vector3.new(0, 0.1, 0.3)
+            root.CFrame = CFrame.new(targetPosisi, livePart.Position)
+            root.Velocity = Vector3.new(0, 0, 0)
             
-            -- 🌟 KUNCI LAMBAT & HALUS: Menggunakan Lerp dengan alpha lebih kecil (0.18) agar pergerakan halus
-            -- Karakter akan meluncur konstan dan mengunci posisinya mengikuti koordinat livePart
-            root.CFrame = root.CFrame:Lerp(CFrame.new(targetPosisi, livePart.Position), 0.06)
-            
-            -- Ambil jarak interaksi maksimal dari prompt
-            local maxDist = livePrompt and livePrompt.MaxActivationDistance or 7
-            local jarakSekarang = (root.Position - livePart.Position).Magnitude
-
-            -- Jika jarak sudah masuk radius aman dan belum menembak buy
-            if jarakSekarang <= (maxDist - 0.5) and not clickFired then
-                clickFired = true
-                
-                task.spawn(function()
-                    task.wait(0.02) -- Jeda fisik sinkronisasi koordinat server
-                    SetStatus("🎯 1-CLICK EXECUTED: " .. targetName, Color3.fromRGB(0, 255, 120))
-                    
-                    pcall(function()
-                        livePrompt.HoldDuration = 0
-                        
-                        -- Eksekusi bypass native executor
-                        if fireproximityprompt then
-                            fireproximityprompt(livePrompt)
-                        else
-                            livePrompt:InputHoldBegin()
-                            task.wait(0.01)
-                            livePrompt:InputHoldEnd()
-                        end
-
-                        -- Simulasi klik di tengah layar game
-                        local VirtualUser = game:GetService("VirtualUser")
-                        VirtualUser:ClickButton1(Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2))
-                    end)
-                end)
+            -- Pastikan HoldDuration tidak ke-reset game jadi ada loading lagi
+            if livePrompt.HoldDuration ~= 0 then
+                pcall(function() livePrompt.HoldDuration = 0 end)
             end
         end
     end)
 
-    -- Menahan thread utama sampai pet benar-buried/dibeli (berhasil) atau timeout
+    -- --------------------------------------------------------
+    -- THREAD SPAMMING OTOMATIS (MENCARI JALUR YANG DIRESPONS GAME)
+    -- --------------------------------------------------------
+    task.spawn(function()
+        -- Beri jeda sangat kecil (0.05 detik) setelah teleport agar posisi sinkron di server
+        task.wait(0.05) 
+
+        while not berhasil and Config.AutoBuy and petModel and petModel:IsDescendantOf(workspace) do
+            local livePrompt = petModel:FindFirstChild("BuyPrompt", true) or prompt
+            if livePrompt then
+                SetStatus("⚡ SPAMMING INTERACTION: " .. targetName, Color3.fromRGB(0, 255, 120))
+                
+                -- Tembak semua metode simulasi klik secara simultan di luar RenderStepped
+                pcall(function()
+                    if fireproximityprompt then
+                        fireproximityprompt(livePrompt)
+                    else
+                        livePrompt:InputHoldBegin()
+                        task.wait(0.01)
+                        livePrompt:InputHoldEnd()
+                    end
+                end)
+
+                -- Simulasi Klik Layar (ClickDetector fallback jika prompt berbentuk objek klik klik)
+                pcall(function()
+                    local VirtualUser = game:GetService("VirtualUser")
+                    VirtualUser:ClickButton1(Vector2.new(workspace.CurrentCamera.ViewportSize.X / 2, workspace.CurrentCamera.ViewportSize.Y / 2))
+                end)
+            end
+            
+            -- Jeda antar-spam biar tidak membuat game freeze/lag, tapi tetap super cepat
+            task.wait(0.08) 
+        end
+    end)
+
+    -- Menahan thread utama sampai pet benar-benar dibeli atau timeout
     while os.clock() - waktuMulai < WAKTU_TIMEOUT_BARU and not berhasil and Config.AutoBuy do
-        task.wait(0.02)
+        task.wait(0.05)
     end
 
-    -- Putuskan koneksi tracking jika loop selesai
-    if KoneksiTracking then KoneksiTracking:Disconnect() KoneksiTracking = nil end
+    -- Bersihkan sisa koneksi tracking
+    if KoneksiTeleport then KoneksiTeleport:Disconnect() KoneksiTeleport = nil end
 
     if berhasil then
         SetStatus("✅ " .. targetName .. " BERHASIL DIBELI!", C.GREEN)
