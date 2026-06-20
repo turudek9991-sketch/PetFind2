@@ -1,12 +1,888 @@
---[[
- .____                  ________ ___.    _____                           __                
- |    |    __ _______   \_____  \\_ |___/ ____\_ __  ______ ____ _____ _/  |_  ___________ 
- |    |   |  |  \__  \   /   |   \| __ \   __\  |  \/  ___// ___\\__  \\   __\/  _ \_  __ \
- |    |___|  |  // __ \_/    |    \ \_\ \  | |  |  /\___ \\  \___ / __ \|  | (  <_> )  | \/
- |_______ \____/(____  /\_______  /___  /__| |____//____  >\___  >____  /__|  \____/|__|   
-         \/          \/         \/    \/                \/     \/     \/                   
-          \_Welcome to LuaObfuscator.com   (Alpha 0.10.9) ~  Much Love, Ferib 
+-- ============================================================
+-- DSCRIPTS PETFINDER V5.0
+-- by dimsgti
+-- Fix: Engine beli dari V3 (proven working) + Bear Mythic +
+--      Urutan pet by rarity + Anti lag aman (tidak hapus Map)
+-- ============================================================
 
-]]--
+local Players         = game:GetService("Players")
+local HttpService     = game:GetService("HttpService")
+local TweenService    = game:GetService("TweenService")
+local RunService      = game:GetService("RunService")
+local UIS             = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
+local LocalPlayer     = Players.LocalPlayer
+local PlayerGui       = LocalPlayer:WaitForChild("PlayerGui")
 
-local v0=game:GetService("Players");local v1=game:GetService("HttpService");local v2=game:GetService("TweenService");local v3=game:GetService("RunService");local v4=game:GetService("UserInputService");local v5=game:GetService("TeleportService");local v6=v0.LocalPlayer;local v7=v6:WaitForChild("PlayerGui");task.spawn(function() local function v191() local v297=workspace:FindFirstChild("LoadingScreenMenu");if v297 then v297:Destroy();end pcall(function() local v347=workspace.CurrentCamera;for v381,v382 in ipairs(v347:GetChildren()) do if (v382:IsA("BlurEffect") or v382:IsA("DepthOfFieldEffect")) then v382:Destroy();end end for v383,v384 in ipairs(game:GetService("Lighting"):GetChildren()) do if (v384:IsA("BlurEffect") or v384:IsA("DepthOfFieldEffect")) then v384:Destroy();end end end);pcall(function() local v348=0;local v349;while true do if (v348==(0 -0)) then v349=v6:FindFirstChild("PlayerGui");if v349 then for v612,v613 in ipairs(v349:GetChildren()) do local v614=v613.Name:lower();if (string.find(v614,"loading") or string.find(v614,"splash") or string.find(v614,"intro")) then v613:Destroy();end end end break;end end end);local v298=workspace.CurrentCamera;local v299=v6.Character or v6.CharacterAdded:Wait() ;local v300=v299:WaitForChild("Humanoid",4 + 1 );local v301=v299:WaitForChild("HumanoidRootPart",1 + 4 );if (v300 and v301) then for v473=1 + 0 ,856 -(660 + 176)  do local v474=0 + 0 ;while true do if (v474==0) then v298.CameraType=Enum.CameraType.Custom;v298.CameraSubject=v300;v474=203 -(14 + 188) ;end if (v474==(676 -(534 + 141))) then v298.FieldOfView=70;v301.Anchored=false;v474=1 + 1 ;end if (v474==(2 + 0)) then task.wait(0.03);break;end end end end workspace.ChildAdded:Connect(function(v350) if (v350.Name=="LoadingScreenMenu") then local v475=0 + 0 ;local v476;local v477;while true do if (v475==(3 -1)) then if v477 then local v621=0 -0 ;while true do if (v621==(0 -0)) then workspace.CurrentCamera.CameraType=Enum.CameraType.Custom;workspace.CurrentCamera.CameraSubject=v477;break;end end end break;end if (v475==0) then task.wait(0.05 + 0 );pcall(function() v350:Destroy();end);v475=1;end if (v475==(1 + 0)) then v476=v6.Character;v477=v476 and v476:FindFirstChildWhichIsA("Humanoid") ;v475=2;end end end end);end local function v192() pcall(function() settings().Rendering.QualityLevel=397 -(115 + 281) ;end);local v302=game:GetService("Lighting");pcall(function() local v352=0;while true do if (v352==0) then v302.GlobalShadows=false;v302.FogEnd=100000;v352=2 -1 ;end if ((1 + 0)==v352) then v302.Brightness=4 -2 ;break;end end end);for v353,v354 in ipairs(v302:GetChildren()) do if (v354:IsA("BlurEffect") or v354:IsA("DepthOfFieldEffect") or v354:IsA("SunRaysEffect") or v354:IsA("ColorCorrectionEffect") or v354:IsA("BloomEffect")) then pcall(function() v354:Destroy();end);end end pcall(function() workspace.Terrain.Decoration=false;end);end local v193={"BirdVisuals","Birds","BlizzardBeams","GnomeVisuals","Gnomes","Handles","LightningEffects","DroppedItems","Fences","Folder","Middle","HolderFolders","PottedPlantVisuals","RainDrops","RainSplashes","StormRainDrops","StormSplashes","Teleports","Temporary","_Gardens","_PetVisualClient","NPCS","CapyBara"};local function v194() local v303=0 -0 ;while true do if (v303==(0 -0)) then for v511,v512 in ipairs(v193) do local v513=workspace:FindFirstChild(v512);if v513 then pcall(function() v513:Destroy();end);end end workspace.ChildAdded:Connect(function(v514) for v535,v536 in ipairs(v193) do if (v514.Name==v536) then local v615=0 + 0 ;while true do if (0==v615) then task.wait(0.1);pcall(function() v514:Destroy();end);break;end end end end end);break;end end end local v195={"Fruits","FruitSpawnLocations","FruitVisuals","PlantVisuals","GrowthVisuals","Effects","Plants"};local function v196(v304) local v305=0 -0 ;while true do if (v305==(1384 -(746 + 638))) then for v515,v516 in ipairs(v195) do if (v304==v516) then return true;end end return false;end end end local function v197(v306) pcall(function() if (v306:IsA("BasePart") or v306:IsA("MeshPart") or v306:IsA("UnionOperation")) then v306.Transparency=1;v306.CastShadow=false;end if (v306:IsA("Decal") or v306:IsA("Texture")) then v306.Transparency=1 + 0 ;end if (v306:IsA("ParticleEmitter") or v306:IsA("Beam") or v306:IsA("Trail") or v306:IsA("Smoke") or v306:IsA("Fire") or v306:IsA("Sparkles")) then v306.Enabled=false;end if (v306:IsA("PointLight") or v306:IsA("SurfaceLight") or v306:IsA("SpotLight")) then v306.Enabled=false;end if v306:IsA("Sound") then v306.Volume=0 -0 ;end end);end local function v198(v307) for v356,v357 in ipairs(v307:GetDescendants()) do if v196(v357.Name) then pcall(function() v357:Destroy();end);end end for v358,v359 in ipairs(v307:GetDescendants()) do v197(v359);end if v307:IsA("BasePart") then pcall(function() local v484=0;while true do if (v484==(341 -(218 + 123))) then v307.Transparency=1;v307.CastShadow=false;break;end end end);end v307.DescendantAdded:Connect(function(v360) task.wait(1581.02 -(1535 + 46) );if ( not v360 or  not v360.Parent) then return;end if v196(v360.Name) then pcall(function() v360:Destroy();end);return;end if (v360.Parent and v196(v360.Parent.Name)) then local v485=0 + 0 ;while true do if (v485==0) then pcall(function() v360:Destroy();end);return;end end end v197(v360);end);end local function v199() local v308=workspace:FindFirstChild("Gardens") or workspace:WaitForChild("Gardens",2 + 8 ) ;if  not v308 then return;end for v361,v362 in ipairs(v308:GetChildren()) do if string.match(v362.Name,"^Plot") then v198(v362);end end v308.ChildAdded:Connect(function(v363) if string.match(v363.Name,"^Plot") then task.wait(560.2 -(306 + 254) );v198(v363);end end);end v191();task.wait(0.05 + 0 );v192();task.wait(0.05 -0 );v194();task.wait(1467.05 -(899 + 568) );v199();print("[DScripts V5] Anti Lag aktif ✔");end);local v8="https://discord.com/api/webhooks/1516387782233297007/8yTQuqiEsx6PykRtu7vfeF6iWB8tfBSKpVzz1mDuuW9un5CAqIB-ZSscUpsbpZLk_AgT";local v9="https://growagardenpetfinder-default-rtdb.asia-southeast1.firebasedatabase.app/";local v10="DscriptsPetFinderV5.json";local v11={Frog="https://static.wikia.nocookie.net/growagarden27847/images/7/7e/FrogNoBackground.png/revision/latest?cb=20260612231916",Bunny="https://static.wikia.nocookie.net/growagarden27847/images/2/26/BunnyNoBackground.png/revision/latest?cb=20260612231929",Bear="https://static.wikia.nocookie.net/growagarden27847/images/thumb/5/5e/Bear.png/250px-Bear.png",Owl="https://static.wikia.nocookie.net/growagarden27847/images/5/5c/Owl.png/revision/latest?cb=20260612231816",Deer="https://static.wikia.nocookie.net/growagarden27847/images/2/27/Deer.png/revision/latest?cb=20260612231816",Robin="https://static.wikia.nocookie.net/growagarden27847/images/1/1b/Robin.png/revision/latest?cb=20260612231816",Bee="https://static.wikia.nocookie.net/growagarden27847/images/5/56/Bee.png/revision/latest?cb=20260612231815",Dragonfly="https://static.wikia.nocookie.net/growagarden27847/images/e/ee/GoldenDragonfly.png/revision/latest?cb=20260612231815",Monkey="https://static.wikia.nocookie.net/growagarden27847/images/2/27/Monkey.png/revision/latest?cb=20260612231816",GoldenDragonfly="https://static.wikia.nocookie.net/growagarden27847/images/e/ee/GoldenDragonfly.png/revision/latest?cb=20260612231815",Unicorn="https://static.wikia.nocookie.net/growagarden27847/images/7/7e/Unicorn.png/revision/latest?cb=20260612212539",Raccoon="https://static.wikia.nocookie.net/growagarden27847/images/7/73/Racoon.png/revision/latest?cb=20260612232005",BlackDragon="https://",IceSerpent="https://"};local v12={BlackDragon="Super",IceSerpent="Super",Raccoon="Super",Bear="Mythic",GoldenDragonfly="Mythic",Unicorn="Mythic",Dragonfly="Mythic",Monkey="Mythic",Bee="Legendary",Robin="Legendary",Deer="Rare",Owl="Uncommon",Bunny="Common",Frog="Common"};local v13={"BlackDragon","IceSerpent","Raccoon","Bear","GoldenDragonfly","Unicorn","Dragonfly","Monkey","Bee","Robin","Deer","Owl","Bunny","Frog"};local v14={Common=Color3.fromRGB(10 + 150 ,1184 -(706 + 318) ,170),Uncommon=Color3.fromRGB(1331 -(721 + 530) ,200,1391 -(945 + 326) ),Rare=Color3.fromRGB(199 -119 ,125 + 15 ,955 -(271 + 429) ),Legendary=Color3.fromRGB(235 + 20 ,1690 -(1408 + 92) ,1136 -(461 + 625) ),Mythic=Color3.fromRGB(200,1368 -(993 + 295) ,14 + 241 ),Super=Color3.fromRGB(1426 -(418 + 753) ,27 + 43 ,8 + 62 )};local v15={Targets={},AutoBuy=false,AntiSteal=false,AutoHop=false};local v16;local v17={};local v18=false;for v200,v201 in ipairs(v13) do v15.Targets[v201]=false;end local function v19() if (isfile and readfile and isfile(v10)) then local v364,v365=pcall(function() return v1:JSONDecode(readfile(v10));end);if (v364 and (type(v365)=="table")) then local v486=0;while true do if (v486==(0 + 0)) then if (v365.AutoBuy~=nil) then v15.AutoBuy=v365.AutoBuy;end if (v365.AntiSteal~=nil) then v15.AntiSteal=v365.AntiSteal;end v486=1 + 0 ;end if (v486==(530 -(406 + 123))) then if (v365.AutoHop~=nil) then v15.AutoHop=v365.AutoHop;end if (type(v365.Targets)=="table") then for v632,v633 in pairs(v365.Targets) do if (v15.Targets[v632]~=nil) then v15.Targets[v632]=v633;end end end break;end end end end end local function v20() if writefile then pcall(function() writefile(v10,v1:JSONEncode(v15));end);end end v19();local function v21(v203,v204) local v205=1769 -(1749 + 20) ;local v206;local v207;local v208;local v209;local v210;local v211;local v212;local v213;while true do if (v205==1) then v209=(v204 and "🎉") or "😢" ;v210=v11[v203] or "" ;if ( #v210<(3 + 7)) then v210="https://i.imgur.com/AfFp7pu.png";end v211=v12[v203] or "Common" ;v205=1324 -(1249 + 73) ;end if (v205==(0 + 0)) then v206=HttpRequest or request or (syn and syn.request) or http_request or nil ;if  not v206 then return;end v207=(v204 and "Pet Berhasil Ditangkap") or "Gagal Menangkap Pet" ;v208=(v204 and (5764864 -(466 + 679))) or 15548997 ;v205=2 -1 ;end if (v205==2) then v212={v209   .. " **"   .. v203   .. "** `["   .. v211   .. "]`" ,"**Status:** "   .. ((v204 and "✅ Masuk ke storage") or "❌ Timeout / Gagal") ,"**Server:** `"   .. tostring(game.JobId)   .. "`" ,"**Waktu:** <t:"   .. os.time()   .. ":R>" };v213=v1:JSONEncode({username="DScripts PetFinder",avatar_url="https://i.imgur.com/VRRsjT7.jpeg",embeds={{title=v207,description=table.concat(v212,"\n"),color=v208,thumbnail={url=v210},footer={text="DScripts PetFinder V5.0 • by dimsgti"},timestamp=os.date("!%Y-%m-%dT%H:%M:%SZ")}}});pcall(function() v206({Url=v8,Method="POST",Headers={["Content-Type"]="application/json"},Body=v213});end);break;end end end local v22={BASE=Color3.fromRGB(3 + 7 ,10,35 -23 ),SURFACE=Color3.fromRGB(43 -27 ,130 -(4 + 110) ,604 -(57 + 527) ),ELEVATED=Color3.fromRGB(1449 -(41 + 1386) ,22,131 -(17 + 86) ),BORDER=Color3.fromRGB(35,35,44),DIVIDER=Color3.fromRGB(20 + 8 ,62 -34 ,36),TEXT_1=Color3.fromRGB(240,695 -455 ,411 -(122 + 44) ),TEXT_2=Color3.fromRGB(190 -80 ,110,424 -296 ),TEXT_3=Color3.fromRGB(49 + 11 ,9 + 51 ,145 -73 ),ACCENT=Color3.fromRGB(130,275 -(30 + 35) ,160),ACCENT_D=Color3.fromRGB(60,76 + 34 ,80),DANGER=Color3.fromRGB(1457 -(1043 + 214) ,283 -208 ,1287 -(323 + 889) ),AMBER=Color3.fromRGB(538 -338 ,735 -(361 + 219) ,60)};local v23=game:GetService("CoreGui");local v24=v23:FindFirstChild("DScriptsPF") or v7:FindFirstChild("DScriptsPF") ;if v24 then v24:Destroy();end local v25=pcall(function() return v23.Name;end);local v26=Instance.new("ScreenGui",(v25 and v23) or v7 );v26.Name="DScriptsPF";v26.ResetOnSpawn=false;local function v29(v214,v215) local v216=Instance.new("UICorner",v214);v216.CornerRadius=UDim.new(320 -(53 + 267) ,v215 or (2 + 4) );end local function v30(v218,v219,v220) local v221=413 -(15 + 398) ;local v222;while true do if (v221==1) then v222.Thickness=v220 or 1 ;return v222;end if (v221==0) then v222=Instance.new("UIStroke",v218);v222.Color=v219 or v22.BORDER ;v221=983 -(18 + 964) ;end end end local function v31(v223,v224) local v225,v226,v227;v224.InputBegan:Connect(function(v309) if ((v309.UserInputType==Enum.UserInputType.MouseButton1) or (v309.UserInputType==Enum.UserInputType.Touch)) then local v387=0 -0 ;while true do if (v387==(1 + 0)) then v227=v223.Position;v309.Changed:Connect(function() if (v309.UserInputState==Enum.UserInputState.End) then v225=false;end end);break;end if (v387==0) then v225=true;v226=v309.Position;v387=1 + 0 ;end end end end);v4.InputChanged:Connect(function(v310) if (v225 and ((v310.UserInputType==Enum.UserInputType.MouseMovement) or (v310.UserInputType==Enum.UserInputType.Touch))) then local v388=850 -(20 + 830) ;local v389;while true do if ((0 + 0)==v388) then v389=v310.Position-v226 ;v223.Position=UDim2.new(v227.X.Scale,v227.X.Offset + v389.X ,v227.Y.Scale,v227.Y.Offset + v389.Y );break;end end end end);end local v32=Instance.new("Frame",v26);v32.Size=UDim2.new(126 -(116 + 10) ,20 + 250 ,0,1198 -(542 + 196) );v32.Position=UDim2.new(0,102 -54 ,0 + 0 ,41 + 39 );v32.BackgroundTransparency=1 + 0 ;local v36=Instance.new("Frame",v32);v36.Size=UDim2.new(2 -1 ,0,2 -1 ,1551 -(1126 + 425) );v36.BackgroundColor3=v22.BASE;v36.BorderSizePixel=405 -(118 + 287) ;v29(v36,8);v30(v36,v22.BORDER,3 -2 );local v41=Instance.new("Frame",v36);v41.Size=UDim2.new(1122 -(118 + 1003) ,0,0 -0 ,429 -(142 + 235) );v41.BackgroundColor3=v22.SURFACE;v41.BorderSizePixel=0 -0 ;v29(v41,8);local v46=Instance.new("Frame",v41);v46.Size=UDim2.new(1 + 0 ,0,977 -(553 + 424) ,14 -6 );v46.Position=UDim2.new(0 + 0 ,0,1 + 0 , -8);v46.BackgroundColor3=v22.SURFACE;v46.BorderSizePixel=0 + 0 ;local v51=Instance.new("Frame",v41);v51.Size=UDim2.new(0 + 0 ,40,0,2);v51.Position=UDim2.new(0 + 0 ,12,0 -0 ,0 -0 );v51.BackgroundColor3=v22.ACCENT;v51.BorderSizePixel=0;v29(v51,2 -1 );local v57=Instance.new("TextLabel",v41);v57.Size=UDim2.new(1 + 0 , -16,0 -0 ,28);v57.Position=UDim2.new(753 -(239 + 514) ,5 + 7 ,1329 -(797 + 532) ,6 + 2 );v57.BackgroundTransparency=1 + 0 ;v57.Text="DScripts PetFinder";v57.TextColor3=v22.TEXT_1;v57.Font=Enum.Font.GothamBold;v57.TextSize=13;v57.TextXAlignment=Enum.TextXAlignment.Left;local v69=Instance.new("TextLabel",v41);v69.Size=UDim2.new(2 -1 , -16,1202 -(373 + 829) ,747 -(476 + 255) );v69.Position=UDim2.new(1130 -(369 + 761) ,12,0 + 0 ,32);v69.BackgroundTransparency=1 -0 ;v69.Text="by dimsgti";v69.TextColor3=v22.TEXT_2;v69.Font=Enum.Font.Gotham;v69.TextSize=16 -7 ;v69.TextXAlignment=Enum.TextXAlignment.Left;v31(v32,v41);local v80=Instance.new("Frame",v36);v80.Size=UDim2.new(1,238 -(64 + 174) ,1 + 0 , -52);v80.Position=UDim2.new(0 -0 ,336 -(144 + 192) ,216 -(42 + 174) ,52);v80.BackgroundTransparency=1;local v84=Instance.new("Frame",v80);v84.Size=UDim2.new(1 + 0 , -(20 + 4),0,12 + 14 );v84.Position=UDim2.new(0,12,0,1514 -(363 + 1141) );v84.BackgroundColor3=v22.SURFACE;v84.BorderSizePixel=1580 -(1183 + 397) ;v29(v84,4);v30(v84,v22.DIVIDER);local v89=Instance.new("Frame",v84);v89.Size=UDim2.new(0 -0 ,5 + 1 ,0 + 0 ,6);v89.Position=UDim2.new(1975 -(1913 + 62) ,7 + 3 ,0.5 -0 , -3);v89.BackgroundColor3=v22.TEXT_3;v89.BorderSizePixel=0;v29(v89,1936 -(565 + 1368) );local v95=Instance.new("TextLabel",v84);v95.Size=UDim2.new(1, -28,3 -2 ,1661 -(1477 + 184) );v95.Position=UDim2.new(0 -0 ,23 + 1 ,856 -(564 + 292) ,0 -0 );v95.BackgroundTransparency=2 -1 ;v95.Text="Menunggu pet...";v95.TextColor3=v22.TEXT_2;v95.Font=Enum.Font.Gotham;v95.TextSize=313 -(244 + 60) ;v95.TextXAlignment=Enum.TextXAlignment.Left;v95.TextTruncate=Enum.TextTruncate.AtEnd;local function v106(v228,v229,v230) v95.Text=v228;v95.TextColor3=v229 or v22.TEXT_2 ;v89.BackgroundColor3=v230 or v229 or v22.TEXT_3 ;end local function v107(v234,v235,v236,v237) local v238=0 + 0 ;local v239;local v240;local v241;local v242;local v243;local v244;local v245;local v246;local v247;while true do if (v238==(481 -(41 + 435))) then v243.BackgroundTransparency=1002 -(938 + 63) ;v243.Text=v237;v243.TextColor3=v22.TEXT_3;v243.Font=Enum.Font.Gotham;v243.TextSize=8;v238=5 + 1 ;end if ((1133 -(936 + 189))==v238) then v245.BackgroundColor3=v22.TEXT_3;v245.BorderSizePixel=0 + 0 ;v29(v245,1619 -(1565 + 48) );v246=Instance.new("TextButton",v239);v246.Size=UDim2.new(1,0 + 0 ,1139 -(782 + 356) ,267 -(176 + 91) );v238=23 -14 ;end if (v238==(5 -1)) then v242.TextSize=1101 -(975 + 117) ;v242.TextXAlignment=Enum.TextXAlignment.Left;v243=Instance.new("TextLabel",v239);v243.Size=UDim2.new(1, -70,1875 -(157 + 1718) ,12 + 2 );v243.Position=UDim2.new(0 -0 ,14,0,75 -53 );v238=1023 -(697 + 321) ;end if (v238==3) then v242.Position=UDim2.new(0,37 -23 ,0,5);v242.BackgroundTransparency=1 -0 ;v242.Text=v236;v242.TextColor3=v22.TEXT_2;v242.Font=Enum.Font.GothamMedium;v238=8 -4 ;end if (v238==2) then v241.BackgroundColor3=v22.BORDER;v241.BorderSizePixel=0;v29(v241,1 + 0 );v242=Instance.new("TextLabel",v239);v242.Size=UDim2.new(1 -0 , -70,0,53 -33 );v238=1230 -(322 + 905) ;end if (v238==(617 -(602 + 9))) then v243.TextXAlignment=Enum.TextXAlignment.Left;v244=Instance.new("Frame",v239);v244.Size=UDim2.new(1189 -(449 + 740) ,36,872 -(826 + 46) ,18);v244.Position=UDim2.new(948 -(245 + 702) , -(145 -99),0.5, -(3 + 6));v244.BackgroundColor3=v22.DIVIDER;v238=1905 -(260 + 1638) ;end if (v238==9) then v246.BackgroundTransparency=441 -(382 + 58) ;v246.Text="";v247=nil;function v247(v487) local v488=0 -0 ;while true do if (v488==(0 + 0)) then v239.BackgroundColor3=(v487 and v22.ELEVATED) or v22.SURFACE ;v240.Color=(v487 and v22.ACCENT_D) or v22.BORDER ;v488=1;end if (v488==(1 -0)) then v242.TextColor3=(v487 and v22.TEXT_1) or v22.TEXT_2 ;v241.BackgroundColor3=(v487 and v22.ACCENT) or v22.BORDER ;v488=5 -3 ;end if (v488==(1207 -(902 + 303))) then v2:Create(v244,TweenInfo.new(0.15 -0 ),{BackgroundColor3=(v487 and v22.ACCENT_D) or v22.DIVIDER }):Play();v2:Create(v245,TweenInfo.new(0.15 -0 ),{Position=(v487 and UDim2.new(1 + 0 , -15,1690.5 -(1121 + 569) , -(220 -(22 + 192)))) or UDim2.new(683 -(483 + 200) ,3,1463.5 -(1404 + 59) , -6) ,BackgroundColor3=(v487 and v22.ACCENT) or v22.TEXT_3 }):Play();break;end end end return v246,v247;end if (v238==(0 -0)) then v239=Instance.new("Frame",v234);v239.Size=UDim2.new(1 -0 , -(789 -(468 + 297)),562 -(334 + 228) ,38);v239.Position=UDim2.new(0 -0 ,12,0 -0 ,v235);v239.BackgroundColor3=v22.SURFACE;v239.BorderSizePixel=0 -0 ;v238=1 + 0 ;end if (v238==1) then v29(v239,242 -(141 + 95) );v240=v30(v239,v22.BORDER);v241=Instance.new("Frame",v239);v241.Size=UDim2.new(0 + 0 ,4 -2 ,0 -0 ,5 + 13 );v241.Position=UDim2.new(0 -0 ,0 + 0 ,0.5 + 0 , -9);v238=2 -0 ;end if ((5 + 2)==v238) then v244.BorderSizePixel=0;v29(v244,172 -(92 + 71) );v245=Instance.new("Frame",v244);v245.Size=UDim2.new(0,6 + 6 ,0 -0 ,12);v245.Position=UDim2.new(765 -(574 + 191) ,3,0.5 + 0 , -(14 -8));v238=8;end end end local v108,v109=v107(v80,24 + 22 ,"Auto Buy","Beli pet secara otomatis");local v110,v111=v107(v80,941 -(254 + 595) ,"Anti Steal","ON = curi | OFF = hemat uang");local v112,v113=v107(v80,264 -(55 + 71) ,"Auto Hop","Hop ke server via Firebase radar");v109(v15.AutoBuy);v111(v15.AntiSteal);v113(v15.AutoHop);v108.MouseButton1Click:Connect(function() v15.AutoBuy= not v15.AutoBuy;v20();v109(v15.AutoBuy);if v15.AutoBuy then local v366=0;local v367;local v368;while true do if (v366==(1 -0)) then if v368 then for v616,v617 in ipairs(v368:GetDescendants()) do v16(v617);end end break;end if ((1790 -(573 + 1217))==v366) then v367=workspace:FindFirstChild("Map");v368=v367 and v367:FindFirstChild("WildPetSpawns") ;v366=2 -1 ;end end end end);v110.MouseButton1Click:Connect(function() local v249=0 + 0 ;while true do if ((1 -0)==v249) then v111(v15.AntiSteal);break;end if (v249==(939 -(714 + 225))) then v15.AntiSteal= not v15.AntiSteal;v20();v249=1;end end end);v112.MouseButton1Click:Connect(function() local v250=0 -0 ;while true do if (v250==(0 -0)) then v15.AutoHop= not v15.AutoHop;v20();v250=1;end if (v250==1) then v113(v15.AutoHop);break;end end end);local v114=Instance.new("Frame",v80);v114.Size=UDim2.new(1, -24,0 + 0 ,1);v114.Position=UDim2.new(0 -0 ,818 -(118 + 688) ,0,186);v114.BackgroundColor3=v22.DIVIDER;v114.BorderSizePixel=0;local v120={"Super","Mythic","Legendary","Rare","Uncommon","Common"};local v121={Super="— SUPER",Mythic="— MYTHIC",Legendary="— LEGENDARY",Rare="— RARE",Uncommon="— UNCOMMON",Common="— COMMON"};local v122=Instance.new("ScrollingFrame",v80);v122.Size=UDim2.new(733 -(16 + 716) , -(45 -21),98 -(11 + 86) , -(477 -281));v122.Position=UDim2.new(285 -(175 + 110) ,29 -17 ,0 -0 ,192);v122.BackgroundTransparency=1;v122.BorderSizePixel=1796 -(503 + 1293) ;v122.ScrollBarThickness=5 -3 ;v122.ScrollBarImageColor3=v22.BORDER;v122.ScrollingDirection=Enum.ScrollingDirection.Y;local v132=Instance.new("UIListLayout",v122);v132.SortOrder=Enum.SortOrder.LayoutOrder;v132.Padding=UDim.new(0,3);local v136;local v137=0 + 0 ;local v138="";for v251,v252 in ipairs(v13) do local v253=1061 -(810 + 251) ;local v254;local v255;local v256;local v257;local v258;local v259;local v260;local v261;while true do if (v253==(3 + 1)) then v259.Position=UDim2.new(0 + 0 ,9 + 0 ,533.5 -(43 + 490) , -(735.5 -(711 + 22)));v259.BackgroundColor3=(v256 and v255) or v22.TEXT_3 ;v259.BorderSizePixel=0 -0 ;v29(v259,862 -(240 + 619) );v253=5;end if (v253==6) then v260.Text=v252;v260.TextColor3=(v256 and v22.TEXT_1) or v22.TEXT_2 ;v260.Font=Enum.Font.GothamMedium;v260.TextSize=9;v253=2 + 5 ;end if (v253==(7 -2)) then v260=Instance.new("TextLabel",v257);v260.Size=UDim2.new(1 + 0 , -50,1745 -(1344 + 400) ,405 -(255 + 150) );v260.Position=UDim2.new(0 + 0 ,11 + 9 ,0 -0 ,0 -0 );v260.BackgroundTransparency=1740 -(404 + 1335) ;v253=6;end if (v253==7) then v260.TextXAlignment=Enum.TextXAlignment.Left;v261=Instance.new("TextLabel",v257);v261.Size=UDim2.new(0,462 -(183 + 223) ,1 -0 ,0 + 0 );v261.Position=UDim2.new(1 + 0 , -(397 -(10 + 327)),0 + 0 ,338 -(118 + 220) );v253=3 + 5 ;end if (v253==(449 -(108 + 341))) then v254=v12[v252] or "Common" ;v255=v14[v254] or v22.TEXT_2 ;if (v254~=v138) then v138=v254;v137+=1 local v517=Instance.new("TextLabel",v122);v517.LayoutOrder=v137;v517.Size=UDim2.new(1,0,0,8 + 8 );v517.BackgroundTransparency=4 -3 ;v517.Text=v121[v254] or v254 ;v517.TextColor3=v255;v517.Font=Enum.Font.GothamBold;v517.TextSize=1500.5 -(711 + 782) ;v517.TextXAlignment=Enum.TextXAlignment.Left;end v137+=(1 -0) v253=470 -(270 + 199) ;end if (v253==(3 + 5)) then v261.BackgroundTransparency=1;v261.Text=v254;v261.TextColor3=(v256 and v255) or v22.TEXT_3 ;v261.Font=Enum.Font.Gotham;v253=1828 -(580 + 1239) ;end if (v253==(2 -1)) then v256=v15.Targets[v252] or false ;v257=Instance.new("TextButton",v122);v257.LayoutOrder=v137;v257.Size=UDim2.new(1,0 + 0 ,0 + 0 ,13 + 15 );v253=4 -2 ;end if (v253==(6 + 3)) then v261.TextSize=7.5;v261.TextXAlignment=Enum.TextXAlignment.Right;v257.MouseButton1Click:Connect(function() local v489=1167 -(645 + 522) ;local v490;while true do if (v489==(1791 -(1010 + 780))) then v490=v15.Targets[v252];v2:Create(v257,TweenInfo.new(0.1 + 0 ),{BackgroundColor3=(v490 and v22.ELEVATED) or v22.SURFACE }):Play();v489=9 -7 ;end if (v489==(0 -0)) then v15.Targets[v252]= not (v15.Targets[v252] or false);v20();v489=1837 -(1045 + 791) ;end if (v489==(9 -5)) then if (v490 and v15.AutoBuy) then local v628=0 -0 ;local v629;local v630;while true do if (v628==(506 -(351 + 154))) then if v630 then for v640,v641 in ipairs(v630:GetDescendants()) do v16(v641);end end break;end if (v628==(1574 -(1281 + 293))) then v629=workspace:FindFirstChild("Map");v630=v629 and v629:FindFirstChild("WildPetSpawns") ;v628=267 -(28 + 238) ;end end end if v136 then v136();end break;end if (v489==(6 -3)) then v260.TextColor3=(v490 and v22.TEXT_1) or v22.TEXT_2 ;v261.TextColor3=(v490 and v255) or v22.TEXT_3 ;v489=4;end if (v489==(1561 -(1381 + 178))) then v258.Color=(v490 and v22.ACCENT_D) or v22.BORDER ;v259.BackgroundColor3=(v490 and v255) or v22.TEXT_3 ;v489=3;end end end);break;end if (v253==3) then v29(v257,5 + 0 );v258=v30(v257,(v256 and v22.ACCENT_D) or v22.BORDER );v259=Instance.new("Frame",v257);v259.Size=UDim2.new(0 + 0 ,3 + 2 ,0 -0 ,3 + 2 );v253=4;end if (v253==2) then v257.BackgroundColor3=(v256 and v22.ELEVATED) or v22.SURFACE ;v257.BorderSizePixel=470 -(381 + 89) ;v257.Text="";v257.AutoButtonColor=false;v253=3;end end end local v139= #v13;local v140=6 + 0 ;v122.CanvasSize=UDim2.new(0 + 0 ,0 -0 ,1156 -(1074 + 82) ,(v139 * (67 -36)) + (v140 * 19) );local v142=Instance.new("Frame",v32);v142.Size=UDim2.new(1784 -(214 + 1570) ,1713 -(990 + 465) ,0 + 0 ,35 + 45 );v142.Position=UDim2.new(1,8 + 0 ,0 -0 ,1726 -(1668 + 58) );v142.BackgroundColor3=v22.BASE;v142.BorderSizePixel=626 -(512 + 114) ;v142.ClipsDescendants=true;v142.Visible=false;v29(v142,8);v30(v142,v22.BORDER);local v149=Instance.new("Frame",v142);v149.Size=UDim2.new(2 -1 ,0 -0 ,0,132 -94 );v149.BackgroundColor3=v22.SURFACE;v149.BorderSizePixel=0;v29(v149,4 + 4 );local v153=Instance.new("Frame",v149);v153.Size=UDim2.new(1,0 + 0 ,0 + 0 ,26 -18 );v153.Position=UDim2.new(1994 -(109 + 1885) ,1469 -(1269 + 200) ,1 -0 , -8);v153.BackgroundColor3=v22.SURFACE;v153.BorderSizePixel=815 -(98 + 717) ;local v158=Instance.new("Frame",v149);v158.Size=UDim2.new(826 -(802 + 24) ,48 -20 ,0 -0 ,2);v158.Position=UDim2.new(0 + 0 ,10 + 2 ,0 + 0 ,0 + 0 );v158.BackgroundColor3=v22.AMBER;v158.BorderSizePixel=0 -0 ;v29(v158,3 -2 );local v164=Instance.new("TextLabel",v149);v164.Size=UDim2.new(1, -80,1 + 0 ,0 + 0 );v164.Position=UDim2.new(0,10 + 2 ,0 + 0 ,0);v164.BackgroundTransparency=1 + 0 ;v164.Text="Live Radar";v164.TextColor3=v22.TEXT_1;v164.Font=Enum.Font.GothamBold;v164.TextSize=1444 -(797 + 636) ;v164.TextXAlignment=Enum.TextXAlignment.Left;local v173=Instance.new("Frame",v149);v173.Size=UDim2.new(0 -0 ,6,0,1625 -(1427 + 192) );v173.Position=UDim2.new(1 + 0 , -20,0.5 -0 , -3);v173.BackgroundColor3=v22.ACCENT;v173.BorderSizePixel=0 + 0 ;v29(v173,2 + 1 );local v178=Instance.new("ScrollingFrame",v142);v178.Size=UDim2.new(327 -(192 + 134) , -(1288 -(316 + 960)),1 + 0 , -(36 + 10));v178.Position=UDim2.new(0 + 0 ,22 -16 ,551 -(83 + 468) ,1848 -(1202 + 604) );v178.BackgroundTransparency=1;v178.BorderSizePixel=0 -0 ;v178.ScrollBarThickness=1;v178.ScrollBarImageColor3=v22.BORDER;local v185=Instance.new("UIListLayout",v178);v185.SortOrder=Enum.SortOrder.LayoutOrder;v185.Padding=UDim.new(0 -0 ,5 -3 );function v136() local v262=325 -(45 + 280) ;local v263;while true do if (v262==(1 + 0)) then v142.Visible=v263;break;end if (v262==(0 + 0)) then v263=false;for v491,v492 in pairs(v15.Targets) do if (v492==true) then v263=true;break;end end v262=1;end end end v136();local function v188() local v264=0;local v265;local v266;local v267;while true do if (v264==0) then v265=HttpRequest or request or (syn and syn.request) or http_request or nil ;if  not v265 then return nil;end v264=1;end if (v264==2) then return nil;end if (v264==(1 + 0)) then v266,v267=pcall(function() return v265({Url=v9   .. "LivePets.json" ,Method="GET"});end);if (v266 and v267 and v267.Body) then local v528,v529=pcall(function() return v1:JSONDecode(v267.Body);end);if (v528 and (type(v529)=="table")) then return v529;end end v264=2 + 0 ;end end end local function v189() v136();for v311,v312 in ipairs(v178:GetChildren()) do if  not v312:IsA("UIListLayout") then v312:Destroy();end end if  not v142.Visible then return;end local v268=v188() or {} ;local v269={};for v313,v314 in ipairs(v13) do if (v15.Targets[v314]==true) then table.insert(v269,v314);end end local v270=1 + 0 ;local v271={};local v272=0 -0 ;for v315,v316 in ipairs(v269) do local v317=v12[v316] or "Common" ;local v318=v14[v317] or v22.TEXT_2 ;local v319=Instance.new("Frame",v178);v319.Size=UDim2.new(1912 -(340 + 1571) ,0 + 0 ,0,1792 -(1733 + 39) );v319.BackgroundTransparency=1;v319.LayoutOrder=v270;v270+=(2 -1) v272+=(1035 -(125 + 909)) local v323=Instance.new("Frame",v319);v323.Size=UDim2.new(0,5,1948 -(1096 + 852) ,5);v323.Position=UDim2.new(0 + 0 ,2,0.5, -(2.5 -0));v323.BackgroundColor3=v318;v323.BorderSizePixel=0;v29(v323,3);local v328=Instance.new("TextLabel",v319);v328.Size=UDim2.new(1, -(10 + 0),1,512 -(409 + 103) );v328.Position=UDim2.new(0,248 -(46 + 190) ,95 -(51 + 44) ,0 + 0 );v328.BackgroundTransparency=1318 -(1114 + 203) ;v328.Font=Enum.Font.GothamBold;v328.TextSize=735 -(228 + 498) ;v328.TextXAlignment=Enum.TextXAlignment.Left;v328.Text=v316;v328.TextColor3=v318;local v339={};for v369,v370 in pairs(v268) do if ((type(v370)=="table") and v370[v316]) then local v493=0 + 0 ;local v494;while true do if (v493==(0 + 0)) then v494=v370[v316];table.insert(v339,{JobId=v369,Players=v494.CurrentPlayers or 0 ,MaxPlayers=v494.MaxPlayers or 12 ,Timestamp=v494.Timestamp or os.time() });break;end end end end table.sort(v339,function(v371,v372) return v371.Timestamp<v372.Timestamp ;end);if ( #v339==(663 -(174 + 489))) then local v468=0;local v469;local v470;while true do if ((7 -4)==v468) then v470.TextColor3=v22.TEXT_3;v470.TextXAlignment=Enum.TextXAlignment.Left;v470.Text="Tidak ada server ditemukan";break;end if (v468==1) then v270+=1 v272+=(1905.8 -(830 + 1075)) v470=Instance.new("TextLabel",v469);v470.Size=UDim2.new(525 -(303 + 221) ,1269 -(231 + 1038) ,1 + 0 ,1162 -(171 + 991) );v468=2;end if (v468==(8 -6)) then v470.Position=UDim2.new(0 -0 ,29 -17 ,0,0 + 0 );v470.BackgroundTransparency=3 -2 ;v470.Font=Enum.Font.Gotham;v470.TextSize=22 -14 ;v468=4 -1 ;end if (v468==0) then v469=Instance.new("Frame",v178);v469.Size=UDim2.new(1,0 -0 ,1248 -(111 + 1137) ,174 -(91 + 67) );v469.BackgroundTransparency=1;v469.LayoutOrder=v270;v468=1;end end else for v495,v496 in ipairs(v339) do local v497=0;local v498;local v499;local v500;local v501;while true do if (v497==(17 -11)) then v500.TextColor3=v22.TEXT_3;v500.Text=(os.time() -v496.Timestamp)   .. "s" ;v501=Instance.new("TextLabel",v498);v501.Size=UDim2.new(0 + 0 ,561 -(423 + 100) ,0,1 + 15 );v497=19 -12 ;end if (v497==1) then v498.Text="";v498.LayoutOrder=v270;v270+=(1 + 0) v272+=1.1 v497=773 -(326 + 445) ;end if (v497==(13 -10)) then v499.Position=UDim2.new(0,22 -12 ,0,0 -0 );v499.BackgroundTransparency=1;v499.Font=Enum.Font.Gotham;v499.TextSize=719 -(530 + 181) ;v497=4;end if ((885 -(614 + 267))==v497) then v499.TextColor3=v22.TEXT_1;v499.Text=string.sub(v496.JobId,1,8)   .. "…  "   .. v496.Players   .. "/"   .. v496.MaxPlayers ;v500=Instance.new("TextLabel",v498);v500.Size=UDim2.new(32 -(19 + 13) ,65 -25 ,1,0 -0 );v497=5;end if (v497==5) then v500.Position=UDim2.new(0 -0 ,148,0 + 0 ,0 -0 );v500.BackgroundTransparency=1;v500.Font=Enum.Font.Gotham;v500.TextSize=16 -8 ;v497=1818 -(1293 + 519) ;end if ((3 -1)==v497) then v29(v498,4);v30(v498,v22.DIVIDER);v499=Instance.new("TextLabel",v498);v499.Size=UDim2.new(0 -0 ,140,1 -0 ,0 -0 );v497=6 -3 ;end if ((5 + 4)==v497) then v498.MouseButton1Click:Connect(function() local v618=0 + 0 ;while true do if (v618==(0 -0)) then if (v496.Players>=v496.MaxPlayers) then local v639=0;while true do if (v639==0) then v106("Server penuh",v22.DANGER,v22.DANGER);return;end end end v106("Teleporting...",v22.AMBER,v22.AMBER);v618=1 + 0 ;end if (v618==(1 + 0)) then v5:TeleportToPlaceInstance(game.PlaceId,v496.JobId,v6);break;end end end);if ((v496.JobId~=game.JobId) and (v496.Players<v496.MaxPlayers)) then table.insert(v271,v496);end break;end if (v497==(5 + 2)) then v501.Position=UDim2.new(1097 -(709 + 387) , -42,0.5, -8);v501.BackgroundColor3=v22.ELEVATED;v501.BorderSizePixel=1858 -(673 + 1185) ;v501.Font=Enum.Font.GothamBold;v497=23 -15 ;end if (v497==(25 -17)) then v501.TextSize=12 -4 ;v501.TextColor3=v22.ACCENT;v501.Text="JOIN";v29(v501,3);v497=9;end if (v497==(0 + 0)) then v498=Instance.new("TextButton",v178);v498.Size=UDim2.new(1,0 + 0 ,0,22);v498.BackgroundColor3=v22.SURFACE;v498.BorderSizePixel=0 -0 ;v497=1 + 0 ;end end end end local v340=Instance.new("Frame",v178);v340.Size=UDim2.new(1,0 -0 ,0 -0 ,1884 -(446 + 1434) );v340.BackgroundTransparency=1284 -(1040 + 243) ;v340.LayoutOrder=v270;v270+=(2 -1) end v178.CanvasSize=UDim2.new(1847 -(559 + 1288) ,0,1931 -(609 + 1322) ,v270 * 18 );local v274=math.clamp(46 + (v272 * 22) ,80,874 -(13 + 441) );v2:Create(v142,TweenInfo.new(0.2 -0 ,Enum.EasingStyle.Quad),{Size=UDim2.new(0 -0 ,258,0 -0 ,v274)}):Play();if (v15.AutoHop and ( #v271>0) and  not v18) then local v373=0 + 0 ;local v374;while true do if (v373==(7 -5)) then v20();v113(false);v373=2 + 1 ;end if (v373==(1 + 0)) then v106("Auto Hop → "   .. string.sub(v374.JobId,2 -1 ,8)   .. "…" ,v22.AMBER,v22.AMBER);v15.AutoHop=false;v373=2;end if ((0 + 0)==v373) then table.sort(v271,function(v554,v555) return v554.Timestamp<v555.Timestamp ;end);v374=v271[1 -0 ];v373=1 + 0 ;end if (v373==(2 + 1)) then task.wait(0.5 + 0 );v5:TeleportToPlaceInstance(game.PlaceId,v374.JobId,v6);break;end end end end task.spawn(function() while task.wait(3 + 0 ) do pcall(v189);end end);local function v190(v275,v276,v277) local v278=v6.Character;local v279=v278 and v278:FindFirstChild("HumanoidRootPart") ;if  not v279 then v18=false;return;end local v280=(v275:IsA("BasePart") and v275) or v275:FindFirstChildWhichIsA("BasePart",true) or v275.PrimaryPart ;if  not v280 then local v375=0;while true do if (v375==0) then v18=false;return;end end end local v281=v275:FindFirstChild("BuyPrompt",true);if ( not v281 and v275.Parent) then v281=v275.Parent:FindFirstChild("BuyPrompt",true);end if  not v281 then local v376=0;while true do if (v376==(0 + 0)) then v18=false;return;end end end local v282=os.clock();local v283=false;local v284=60;pcall(function() v281.HoldDuration=433 -(153 + 280) ;end);task.spawn(function() while  not v283 and ((os.clock() -v282)<v284)  do task.wait(0.01);if ( not v275 or  not v275.Parent or  not v275:IsDescendantOf(workspace)) then v283=true;end end end);local v285;v285=v3.Heartbeat:Connect(function() if ( not v275 or  not v275.Parent or  not v275:IsDescendantOf(workspace) or v283 or  not v15.AutoBuy) then if v285 then v285:Disconnect();v285=nil;end return;end local v345=(v275:IsA("BasePart") and v275) or v275:FindFirstChildWhichIsA("BasePart",true) or v275.PrimaryPart ;local v346=v275:FindFirstChild("BuyPrompt",true) or v281 ;if (v345 and v279 and v346) then local v471=0;while true do if (v471==(0 -0)) then v279.CFrame=CFrame.new(v345.Position + Vector3.new(0,0.1 + 0 ,0.3) ,v345.Position);v279.Velocity=Vector3.new(0 + 0 ,0 + 0 ,0 + 0 );v471=1 + 0 ;end if (v471==(1 -0)) then if (v346.HoldDuration~=(0 + 0)) then pcall(function() v346.HoldDuration=0;end);end break;end end end end);task.spawn(function() task.wait(0.05);while  not v283 and v15.AutoBuy and v275 and v275:IsDescendantOf(workspace)  do local v377=v275:FindFirstChild("BuyPrompt",true) or v281 ;if v377 then local v502=0;while true do if (v502==0) then pcall(function() if fireproximityprompt then fireproximityprompt(v377);else local v634=0;while true do if ((667 -(89 + 578))==v634) then v377:InputHoldBegin();task.wait(0.01 + 0 );v634=1 -0 ;end if (1==v634) then v377:InputHoldEnd();break;end end end end);pcall(function() local v619=1049 -(572 + 477) ;local v620;while true do if (v619==0) then v620=game:GetService("VirtualUser");v620:ClickButton1(Vector2.new(workspace.CurrentCamera.ViewportSize.X/(1 + 1) ,workspace.CurrentCamera.ViewportSize.Y/(2 + 0) ));break;end end end);break;end end end task.wait(0.08 + 0 );end end);while ((os.clock() -v282)<v284) and  not v283 and v15.AutoBuy  do task.wait(0.05);end if v285 then local v378=0;while true do if ((86 -(84 + 2))==v378) then v285:Disconnect();v285=nil;break;end end end if v283 then local v379=0;while true do if (v379==1) then v17[v277]=true;break;end if (v379==0) then v106("✓ "   .. v276   .. " berhasil!" ,v22.ACCENT,v22.ACCENT);task.spawn(function() v21(v276,true);end);v379=1 -0 ;end end else local v380=0 + 0 ;while true do if (v380==(842 -(497 + 345))) then v106("✕ "   .. v276   .. " timeout" ,v22.DANGER,v22.DANGER);task.spawn(function() v21(v276,false);end);v380=1;end if (v380==1) then v17[v277]=nil;break;end end end v18=false;end function v16(v286) local v287=0 + 0 ;local v288;local v289;local v290;local v291;local v292;while true do if (1==v287) then for v503,v504 in pairs(v15.Targets) do if (v504 and string.find(v288,v503:lower())) then v289=v503;break;end end if  not v289 then return;end v290=(v286:IsA("Model") and v286) or v286.Parent ;v287=1 + 1 ;end if (v287==4) then v17[v292]=true;v18=true;v106("⬤ "   .. v289   .. " terdeteksi..." ,v22.ACCENT,v22.ACCENT);v287=1338 -(605 + 728) ;end if (v287==0) then if ( not v286 or  not v286.Parent or v18 or  not v15.AutoBuy) then return;end v288=v286.Name:lower();v289=nil;v287=1;end if (v287==5) then task.spawn(function() v190(v290,v289,v292);end);break;end if (v287==(2 + 0)) then if ( not v290 or  not v290:IsA("Model")) then return;end v291=v290:FindFirstChild("BuyPrompt",true);if  not v291 then return;end v287=6 -3 ;end if (v287==(1 + 2)) then if ( not v15.AntiSteal and  not v291.Enabled) then local v534=0 -0 ;while true do if ((0 + 0)==v534) then v106("Skip — sudah dibeli orang lain",v22.TEXT_3,v22.TEXT_3);return;end end end v292=tostring(v290)   .. "_"   .. v289 ;if v17[v292] then return;end v287=10 -6 ;end end end task.spawn(function() local v293=0 + 0 ;local v294;local v295;local v296;while true do if (v293==(490 -(457 + 32))) then if  not v295 then return;end v296=nil;v293=1 + 1 ;end if (v293==(1404 -(832 + 570))) then function v296(v505) if ((v505:IsA("Model") or v505:IsA("BasePart")) and v505:IsDescendantOf(v295)) then v16(v505);end end for v506,v507 in ipairs(v295:GetDescendants()) do v296(v507);end v293=3;end if (v293==3) then v295.DescendantAdded:Connect(v296);break;end if (v293==(0 + 0)) then v294=workspace:WaitForChild("Map",15);v295=v294 and v294:WaitForChild("WildPetSpawns",4 + 11 ) ;v293=3 -2 ;end end end);print("[DScripts PetFinder V5.0] by dimsgti — Loaded ✔");print("[V5] Engine beli: V3 proven | Bear: Mythic | Urutan: by rarity | Anti lag: aman");
+-- ============================================================
+-- ANTI LAG AMAN — tidak menyentuh Map/WildPetSpawns sama sekali
+-- ============================================================
+task.spawn(function()
+
+    -- [1] Bypass loading screen
+    local function BypassLoading()
+        local ls = workspace:FindFirstChild("LoadingScreenMenu")
+        if ls then ls:Destroy() end
+        pcall(function()
+            local Cam = workspace.CurrentCamera
+            for _, v in ipairs(Cam:GetChildren()) do
+                if v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") then v:Destroy() end
+            end
+            for _, v in ipairs(game:GetService("Lighting"):GetChildren()) do
+                if v:IsA("BlurEffect") or v:IsA("DepthOfFieldEffect") then v:Destroy() end
+            end
+        end)
+        pcall(function()
+            local pg = LocalPlayer:FindFirstChild("PlayerGui")
+            if pg then
+                for _, gui in ipairs(pg:GetChildren()) do
+                    local n = gui.Name:lower()
+                    if string.find(n,"loading") or string.find(n,"splash") or string.find(n,"intro") then
+                        gui:Destroy()
+                    end
+                end
+            end
+        end)
+        local Cam = workspace.CurrentCamera
+        local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local hum  = char:WaitForChild("Humanoid", 5)
+        local root = char:WaitForChild("HumanoidRootPart", 5)
+        if hum and root then
+            for i = 1, 20 do
+                Cam.CameraType    = Enum.CameraType.Custom
+                Cam.CameraSubject = hum
+                Cam.FieldOfView   = 70
+                root.Anchored     = false
+                task.wait(0.03)
+            end
+        end
+        workspace.ChildAdded:Connect(function(child)
+            if child.Name == "LoadingScreenMenu" then
+                task.wait(0.05); pcall(function() child:Destroy() end)
+                local c2 = LocalPlayer.Character
+                local h2 = c2 and c2:FindFirstChildWhichIsA("Humanoid")
+                if h2 then
+                    workspace.CurrentCamera.CameraType    = Enum.CameraType.Custom
+                    workspace.CurrentCamera.CameraSubject = h2
+                end
+            end
+        end)
+    end
+
+    -- [2] Optimasi render global
+    local function OptimRender()
+        pcall(function() settings().Rendering.QualityLevel = 1 end)
+        local L = game:GetService("Lighting")
+        pcall(function()
+            L.GlobalShadows = false; L.FogEnd = 100000; L.Brightness = 2
+        end)
+        for _, efek in ipairs(L:GetChildren()) do
+            if efek:IsA("BlurEffect") or efek:IsA("DepthOfFieldEffect") or
+               efek:IsA("SunRaysEffect") or efek:IsA("ColorCorrectionEffect") or
+               efek:IsA("BloomEffect") then
+                pcall(function() efek:Destroy() end)
+            end
+        end
+        pcall(function() workspace.Terrain.Decoration = false end)
+    end
+
+    -- [3] Hapus folder visual di workspace (AMAN — tidak menyentuh Map)
+    local NUKE_WS = {
+        "BirdVisuals","Birds","BlizzardBeams","GnomeVisuals","Gnomes",
+        "Handles","LightningEffects","DroppedItems","Fences","Folder",
+        "Middle","HolderFolders","PottedPlantVisuals","RainDrops",
+        "RainSplashes","StormRainDrops","StormSplashes","Teleports",
+        "Temporary","_Gardens","_PetVisualClient","NPCS","CapyBara",
+    }
+    local function NukeWorkspace()
+        for _, nama in ipairs(NUKE_WS) do
+            local f = workspace:FindFirstChild(nama)
+            if f then pcall(function() f:Destroy() end) end
+        end
+        workspace.ChildAdded:Connect(function(child)
+            for _, nama in ipairs(NUKE_WS) do
+                if child.Name == nama then
+                    task.wait(0.1); pcall(function() child:Destroy() end)
+                end
+            end
+        end)
+    end
+
+    -- [4] Bersihkan Plot di Gardens (tanaman + buah)
+    -- PENTING: Gardens bukan bagian dari Map, aman dihapus
+    local FOLDER_BUAH = {
+        "Fruits","FruitSpawnLocations","FruitVisuals",
+        "PlantVisuals","GrowthVisuals","Effects","Plants",
+    }
+    local function IsFolderBuah(nama)
+        for _, fb in ipairs(FOLDER_BUAH) do
+            if nama == fb then return true end
+        end
+        return false
+    end
+    local function MatikanObj(obj)
+        pcall(function()
+            if obj:IsA("BasePart") or obj:IsA("MeshPart") or obj:IsA("UnionOperation") then
+                obj.Transparency = 1; obj.CastShadow = false
+            end
+            if obj:IsA("Decal") or obj:IsA("Texture") then obj.Transparency = 1 end
+            if obj:IsA("ParticleEmitter") or obj:IsA("Beam") or obj:IsA("Trail") or
+               obj:IsA("Smoke") or obj:IsA("Fire") or obj:IsA("Sparkles") then obj.Enabled = false end
+            if obj:IsA("PointLight") or obj:IsA("SurfaceLight") or obj:IsA("SpotLight") then obj.Enabled = false end
+            if obj:IsA("Sound") then obj.Volume = 0 end
+        end)
+    end
+    local function BersihkanPlot(plot)
+        -- Destroy folder buah
+        for _, desc in ipairs(plot:GetDescendants()) do
+            if IsFolderBuah(desc.Name) then
+                pcall(function() desc:Destroy() end)
+            end
+        end
+        -- Invisible sisa
+        for _, desc in ipairs(plot:GetDescendants()) do
+            MatikanObj(desc)
+        end
+        if plot:IsA("BasePart") then
+            pcall(function() plot.Transparency = 1; plot.CastShadow = false end)
+        end
+        -- Watch buah baru tumbuh
+        plot.DescendantAdded:Connect(function(desc)
+            task.wait(0.02)
+            if not desc or not desc.Parent then return end
+            if IsFolderBuah(desc.Name) then
+                pcall(function() desc:Destroy() end); return
+            end
+            if desc.Parent and IsFolderBuah(desc.Parent.Name) then
+                pcall(function() desc:Destroy() end); return
+            end
+            MatikanObj(desc)
+        end)
+    end
+    local function HapusPlot()
+        local Gardens = workspace:FindFirstChild("Gardens") or workspace:WaitForChild("Gardens", 10)
+        if not Gardens then return end
+        for _, child in ipairs(Gardens:GetChildren()) do
+            if string.match(child.Name, "^Plot") then BersihkanPlot(child) end
+        end
+        Gardens.ChildAdded:Connect(function(child)
+            if string.match(child.Name, "^Plot") then
+                task.wait(0.2); BersihkanPlot(child)
+            end
+        end)
+    end
+
+    BypassLoading()
+    task.wait(0.05)
+    OptimRender()
+    task.wait(0.05)
+    NukeWorkspace()
+    task.wait(0.05)
+    HapusPlot()
+    print("[DScripts V5] Anti Lag aktif ✔")
+end)
+
+-- ============================================================
+-- CONFIG
+-- ============================================================
+local DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1516387782233297007/8yTQuqiEsx6PykRtu7vfeF6iWB8tfBSKpVzz1mDuuW9un5CAqIB-ZSscUpsbpZLk_AgT"
+local FirebaseURL         = "https://growagardenpetfinder-default-rtdb.asia-southeast1.firebasedatabase.app/"
+local ConfigFile          = "DscriptsPetFinderV5.json"
+
+-- Gambar pet untuk notif Discord
+local GambarPet = {
+    ["Frog"]           = "https://static.wikia.nocookie.net/growagarden27847/images/7/7e/FrogNoBackground.png/revision/latest?cb=20260612231916",
+    ["Bunny"]          = "https://static.wikia.nocookie.net/growagarden27847/images/2/26/BunnyNoBackground.png/revision/latest?cb=20260612231929",
+    ["Bear"]           = "https://static.wikia.nocookie.net/growagarden27847/images/thumb/5/5e/Bear.png/250px-Bear.png",
+    ["Owl"]            = "https://static.wikia.nocookie.net/growagarden27847/images/5/5c/Owl.png/revision/latest?cb=20260612231816",
+    ["Deer"]           = "https://static.wikia.nocookie.net/growagarden27847/images/2/27/Deer.png/revision/latest?cb=20260612231816",
+    ["Robin"]          = "https://static.wikia.nocookie.net/growagarden27847/images/1/1b/Robin.png/revision/latest?cb=20260612231816",
+    ["Bee"]            = "https://static.wikia.nocookie.net/growagarden27847/images/5/56/Bee.png/revision/latest?cb=20260612231815",
+    ["Dragonfly"]      = "https://static.wikia.nocookie.net/growagarden27847/images/e/ee/GoldenDragonfly.png/revision/latest?cb=20260612231815",
+    ["Monkey"]         = "https://static.wikia.nocookie.net/growagarden27847/images/2/27/Monkey.png/revision/latest?cb=20260612231816",
+    ["GoldenDragonfly"]= "https://static.wikia.nocookie.net/growagarden27847/images/e/ee/GoldenDragonfly.png/revision/latest?cb=20260612231815",
+    ["Unicorn"]        = "https://static.wikia.nocookie.net/growagarden27847/images/7/7e/Unicorn.png/revision/latest?cb=20260612212539",
+    ["Raccoon"]        = "https://static.wikia.nocookie.net/growagarden27847/images/7/73/Racoon.png/revision/latest?cb=20260612232005",
+    ["BlackDragon"]    = "https://",
+    ["IceSerpent"]     = "https://",
+}
+
+-- ============================================================
+-- PET DATA — Diurutkan dari rarity tertinggi ke terendah
+-- Super → Mythic → Legendary → Rare → Uncommon → Common
+-- ============================================================
+local PetRarity = {
+    -- Super (tier 6)
+    BlackDragon    = "Super",
+    IceSerpent     = "Super",
+    Raccoon        = "Super",
+    -- Mythic (tier 5)
+    Bear           = "Mythic",  -- Bear = Mythic sesuai permintaan
+    GoldenDragonfly= "Mythic",
+    Unicorn        = "Mythic",
+    Dragonfly      = "Mythic",
+    Monkey         = "Mythic",
+    -- Legendary (tier 4)
+    Bee            = "Legendary",
+    Robin          = "Legendary",
+    -- Rare (tier 3)
+    Deer           = "Rare",
+    -- Uncommon (tier 2)
+    Owl            = "Uncommon",
+    -- Common (tier 1)
+    Bunny          = "Common",
+    Frog           = "Common",
+}
+
+-- Urutan list: Super dulu, turun ke Common
+local ListSemuaPet = {
+    -- Super
+    "BlackDragon","IceSerpent","Raccoon",
+    -- Mythic
+    "Bear","GoldenDragonfly","Unicorn","Dragonfly","Monkey",
+    -- Legendary
+    "Bee","Robin",
+    -- Rare
+    "Deer",
+    -- Uncommon
+    "Owl",
+    -- Common
+    "Bunny","Frog",
+}
+
+local RarityColor = {
+    Common    = Color3.fromRGB(160, 160, 170),
+    Uncommon  = Color3.fromRGB(80,  200, 120),
+    Rare      = Color3.fromRGB(80,  140, 255),
+    Legendary = Color3.fromRGB(255, 190, 50),
+    Mythic    = Color3.fromRGB(200, 80,  255),
+    Super     = Color3.fromRGB(255, 70,  70),
+}
+
+local Config = { Targets={}, AutoBuy=false, AntiSteal=false, AutoHop=false }
+local CekPetLokal
+local PetSudahDibeli  = {}
+local sedangMemproses = false
+
+for _, p in ipairs(ListSemuaPet) do Config.Targets[p] = false end
+
+local function LoadConfig()
+    if isfile and readfile and isfile(ConfigFile) then
+        local ok, data = pcall(function() return HttpService:JSONDecode(readfile(ConfigFile)) end)
+        if ok and type(data)=="table" then
+            if data.AutoBuy   ~= nil then Config.AutoBuy   = data.AutoBuy   end
+            if data.AntiSteal ~= nil then Config.AntiSteal = data.AntiSteal end
+            if data.AutoHop   ~= nil then Config.AutoHop   = data.AutoHop   end
+            if type(data.Targets)=="table" then
+                for k,v in pairs(data.Targets) do
+                    if Config.Targets[k]~=nil then Config.Targets[k]=v end
+                end
+            end
+        end
+    end
+end
+local function SaveConfig()
+    if writefile then pcall(function() writefile(ConfigFile, HttpService:JSONEncode(Config)) end) end
+end
+LoadConfig()
+
+-- ============================================================
+-- DISCORD WEBHOOK
+-- ============================================================
+local function KirimNotifDiscord(namaPet, sukses)
+    local httpFunc = HttpRequest or request or (syn and syn.request) or http_request or nil
+    if not httpFunc then return end
+    local judul  = sukses and "Pet Berhasil Ditangkap" or "Gagal Menangkap Pet"
+    local warna  = sukses and 5763719 or 15548997
+    local emoji  = sukses and "🎉" or "😢"
+    local urlGbr = GambarPet[namaPet] or ""
+    if #urlGbr < 10 then urlGbr = "https://i.imgur.com/AfFp7pu.png" end
+    local rarity = PetRarity[namaPet] or "Common"
+    local baris = {
+        emoji .. " **" .. namaPet .. "** `[" .. rarity .. "]`",
+        "**Status:** " .. (sukses and "✅ Masuk ke storage" or "❌ Timeout / Gagal"),
+        "**Server:** `" .. tostring(game.JobId) .. "`",
+        "**Waktu:** <t:" .. os.time() .. ":R>",
+    }
+    local payload = HttpService:JSONEncode({
+        username   = "DScripts PetFinder",
+        avatar_url = "https://i.imgur.com/VRRsjT7.jpeg",
+        embeds = {{
+            title       = judul,
+            description = table.concat(baris, "\n"),
+            color       = warna,
+            thumbnail   = { url = urlGbr },
+            footer      = { text = "DScripts PetFinder V5.0 • by dimsgti" },
+            timestamp   = os.date("!%Y-%m-%dT%H:%M:%SZ"),
+        }}
+    })
+    pcall(function()
+        httpFunc({ Url=DISCORD_WEBHOOK_URL, Method="POST", Headers={["Content-Type"]="application/json"}, Body=payload })
+    end)
+end
+
+-- ============================================================
+-- UI
+-- ============================================================
+local C = {
+    BASE     = Color3.fromRGB(10, 10, 12),
+    SURFACE  = Color3.fromRGB(16, 16, 20),
+    ELEVATED = Color3.fromRGB(22, 22, 28),
+    BORDER   = Color3.fromRGB(35, 35, 44),
+    DIVIDER  = Color3.fromRGB(28, 28, 36),
+    TEXT_1   = Color3.fromRGB(240, 240, 245),
+    TEXT_2   = Color3.fromRGB(110, 110, 128),
+    TEXT_3   = Color3.fromRGB(60,  60,  72),
+    ACCENT   = Color3.fromRGB(130, 210, 160),
+    ACCENT_D = Color3.fromRGB(60,  110, 80),
+    DANGER   = Color3.fromRGB(200, 75,  75),
+    AMBER    = Color3.fromRGB(200, 155, 60),
+}
+
+local CoreGui = game:GetService("CoreGui")
+local oldUI = CoreGui:FindFirstChild("DScriptsPF") or PlayerGui:FindFirstChild("DScriptsPF")
+if oldUI then oldUI:Destroy() end
+local ok_cg = pcall(function() return CoreGui.Name end)
+local MainSG = Instance.new("ScreenGui", ok_cg and CoreGui or PlayerGui)
+MainSG.Name = "DScriptsPF"; MainSG.ResetOnSpawn = false
+
+local function Corner(p, r) local c=Instance.new("UICorner",p); c.CornerRadius=UDim.new(0,r or 6) end
+local function Stroke(p, col, th) local s=Instance.new("UIStroke",p); s.Color=col or C.BORDER; s.Thickness=th or 1; return s end
+
+local function MakeDraggable(frame, handle)
+    local drag,ds,sp
+    handle.InputBegan:Connect(function(inp)
+        if inp.UserInputType==Enum.UserInputType.MouseButton1 or inp.UserInputType==Enum.UserInputType.Touch then
+            drag=true; ds=inp.Position; sp=frame.Position
+            inp.Changed:Connect(function() if inp.UserInputState==Enum.UserInputState.End then drag=false end end)
+        end
+    end)
+    UIS.InputChanged:Connect(function(inp)
+        if drag and (inp.UserInputType==Enum.UserInputType.MouseMovement or inp.UserInputType==Enum.UserInputType.Touch) then
+            local d=inp.Position-ds
+            frame.Position=UDim2.new(sp.X.Scale,sp.X.Offset+d.X,sp.Y.Scale,sp.Y.Offset+d.Y)
+        end
+    end)
+end
+
+local Root = Instance.new("Frame", MainSG)
+Root.Size = UDim2.new(0,270,0,460)
+Root.Position = UDim2.new(0,48,0,80)
+Root.BackgroundTransparency = 1
+
+local Win = Instance.new("Frame", Root)
+Win.Size = UDim2.new(1,0,1,0)
+Win.BackgroundColor3 = C.BASE; Win.BorderSizePixel = 0
+Corner(Win, 8); Stroke(Win, C.BORDER, 1)
+
+local Header = Instance.new("Frame", Win)
+Header.Size = UDim2.new(1,0,0,52)
+Header.BackgroundColor3 = C.SURFACE; Header.BorderSizePixel = 0
+Corner(Header, 8)
+local HFix = Instance.new("Frame", Header)
+HFix.Size=UDim2.new(1,0,0,8); HFix.Position=UDim2.new(0,0,1,-8)
+HFix.BackgroundColor3=C.SURFACE; HFix.BorderSizePixel=0
+
+local AccentLine = Instance.new("Frame", Header)
+AccentLine.Size=UDim2.new(0,40,0,2); AccentLine.Position=UDim2.new(0,12,0,0)
+AccentLine.BackgroundColor3=C.ACCENT; AccentLine.BorderSizePixel=0
+Corner(AccentLine, 1)
+
+local TitleLbl = Instance.new("TextLabel", Header)
+TitleLbl.Size=UDim2.new(1,-16,0,28); TitleLbl.Position=UDim2.new(0,12,0,8)
+TitleLbl.BackgroundTransparency=1; TitleLbl.Text="DScripts PetFinder"
+TitleLbl.TextColor3=C.TEXT_1; TitleLbl.Font=Enum.Font.GothamBold
+TitleLbl.TextSize=13; TitleLbl.TextXAlignment=Enum.TextXAlignment.Left
+
+local CreditLbl = Instance.new("TextLabel", Header)
+CreditLbl.Size=UDim2.new(1,-16,0,16); CreditLbl.Position=UDim2.new(0,12,0,32)
+CreditLbl.BackgroundTransparency=1; CreditLbl.Text="by dimsgti"
+CreditLbl.TextColor3=C.TEXT_2; CreditLbl.Font=Enum.Font.Gotham
+CreditLbl.TextSize=9; CreditLbl.TextXAlignment=Enum.TextXAlignment.Left
+
+MakeDraggable(Root, Header)
+
+local Body = Instance.new("Frame", Win)
+Body.Size=UDim2.new(1,0,1,-52); Body.Position=UDim2.new(0,0,0,52)
+Body.BackgroundTransparency=1
+
+-- Status bar
+local StatusBar = Instance.new("Frame", Body)
+StatusBar.Size=UDim2.new(1,-24,0,26); StatusBar.Position=UDim2.new(0,12,0,10)
+StatusBar.BackgroundColor3=C.SURFACE; StatusBar.BorderSizePixel=0
+Corner(StatusBar, 4); Stroke(StatusBar, C.DIVIDER)
+
+local StatusDot = Instance.new("Frame", StatusBar)
+StatusDot.Size=UDim2.new(0,6,0,6); StatusDot.Position=UDim2.new(0,10,0.5,-3)
+StatusDot.BackgroundColor3=C.TEXT_3; StatusDot.BorderSizePixel=0; Corner(StatusDot, 3)
+
+local StatusLbl = Instance.new("TextLabel", StatusBar)
+StatusLbl.Size=UDim2.new(1,-28,1,0); StatusLbl.Position=UDim2.new(0,24,0,0)
+StatusLbl.BackgroundTransparency=1; StatusLbl.Text="Menunggu pet..."
+StatusLbl.TextColor3=C.TEXT_2; StatusLbl.Font=Enum.Font.Gotham
+StatusLbl.TextSize=9; StatusLbl.TextXAlignment=Enum.TextXAlignment.Left
+StatusLbl.TextTruncate=Enum.TextTruncate.AtEnd
+
+local function SetStatus(msg, warna, dotWarna)
+    StatusLbl.Text=msg
+    StatusLbl.TextColor3=warna or C.TEXT_2
+    StatusDot.BackgroundColor3=dotWarna or warna or C.TEXT_3
+end
+
+-- Toggle builder
+local function BuatToggle(parent, posY, label, sublabel)
+    local Row = Instance.new("Frame", parent)
+    Row.Size=UDim2.new(1,-24,0,38); Row.Position=UDim2.new(0,12,0,posY)
+    Row.BackgroundColor3=C.SURFACE; Row.BorderSizePixel=0
+    Corner(Row, 6)
+    local RowStroke = Stroke(Row, C.BORDER)
+
+    local LeftAccent = Instance.new("Frame", Row)
+    LeftAccent.Size=UDim2.new(0,2,0,18); LeftAccent.Position=UDim2.new(0,0,0.5,-9)
+    LeftAccent.BackgroundColor3=C.BORDER; LeftAccent.BorderSizePixel=0; Corner(LeftAccent, 1)
+
+    local LabelTxt = Instance.new("TextLabel", Row)
+    LabelTxt.Size=UDim2.new(1,-70,0,20); LabelTxt.Position=UDim2.new(0,14,0,5)
+    LabelTxt.BackgroundTransparency=1; LabelTxt.Text=label
+    LabelTxt.TextColor3=C.TEXT_2; LabelTxt.Font=Enum.Font.GothamMedium
+    LabelTxt.TextSize=9; LabelTxt.TextXAlignment=Enum.TextXAlignment.Left
+
+    local SubLbl = Instance.new("TextLabel", Row)
+    SubLbl.Size=UDim2.new(1,-70,0,14); SubLbl.Position=UDim2.new(0,14,0,22)
+    SubLbl.BackgroundTransparency=1; SubLbl.Text=sublabel
+    SubLbl.TextColor3=C.TEXT_3; SubLbl.Font=Enum.Font.Gotham
+    SubLbl.TextSize=8; SubLbl.TextXAlignment=Enum.TextXAlignment.Left
+
+    local Pill = Instance.new("Frame", Row)
+    Pill.Size=UDim2.new(0,36,0,18); Pill.Position=UDim2.new(1,-46,0.5,-9)
+    Pill.BackgroundColor3=C.DIVIDER; Pill.BorderSizePixel=0; Corner(Pill, 9)
+
+    local PillDot = Instance.new("Frame", Pill)
+    PillDot.Size=UDim2.new(0,12,0,12); PillDot.Position=UDim2.new(0,3,0.5,-6)
+    PillDot.BackgroundColor3=C.TEXT_3; PillDot.BorderSizePixel=0; Corner(PillDot, 6)
+
+    local Btn = Instance.new("TextButton", Row)
+    Btn.Size=UDim2.new(1,0,1,0); Btn.BackgroundTransparency=1; Btn.Text=""
+
+    local function Set(on)
+        Row.BackgroundColor3    = on and C.ELEVATED or C.SURFACE
+        RowStroke.Color         = on and C.ACCENT_D or C.BORDER
+        LabelTxt.TextColor3     = on and C.TEXT_1 or C.TEXT_2
+        LeftAccent.BackgroundColor3 = on and C.ACCENT or C.BORDER
+        TweenService:Create(Pill,    TweenInfo.new(0.15), {BackgroundColor3 = on and C.ACCENT_D or C.DIVIDER}):Play()
+        TweenService:Create(PillDot, TweenInfo.new(0.15), {
+            Position         = on and UDim2.new(1,-15,0.5,-6) or UDim2.new(0,3,0.5,-6),
+            BackgroundColor3 = on and C.ACCENT or C.TEXT_3,
+        }):Play()
+    end
+    return Btn, Set
+end
+
+local MasterBtn,    SetMaster    = BuatToggle(Body, 46,  "Auto Buy",   "Beli pet secara otomatis")
+local AntiStealBtn, SetAntiSteal = BuatToggle(Body, 92,  "Anti Steal", "ON = curi | OFF = hemat uang")
+local AutoHopBtn,   SetAutoHop   = BuatToggle(Body, 138, "Auto Hop",   "Hop ke server via Firebase radar")
+
+SetMaster(Config.AutoBuy); SetAntiSteal(Config.AntiSteal); SetAutoHop(Config.AutoHop)
+
+MasterBtn.MouseButton1Click:Connect(function()
+    Config.AutoBuy = not Config.AutoBuy; SaveConfig(); SetMaster(Config.AutoBuy)
+    if Config.AutoBuy then
+        local Map=workspace:FindFirstChild("Map")
+        local PF=Map and Map:FindFirstChild("WildPetSpawns")
+        if PF then for _,o in ipairs(PF:GetDescendants()) do CekPetLokal(o) end end
+    end
+end)
+AntiStealBtn.MouseButton1Click:Connect(function()
+    Config.AntiSteal = not Config.AntiSteal; SaveConfig(); SetAntiSteal(Config.AntiSteal)
+end)
+AutoHopBtn.MouseButton1Click:Connect(function()
+    Config.AutoHop = not Config.AutoHop; SaveConfig(); SetAutoHop(Config.AutoHop)
+end)
+
+-- Divider + label
+local Div = Instance.new("Frame", Body)
+Div.Size=UDim2.new(1,-24,0,1); Div.Position=UDim2.new(0,12,0,186)
+Div.BackgroundColor3=C.DIVIDER; Div.BorderSizePixel=0
+
+-- Rarity section labels
+local RarityOrder = {"Super","Mythic","Legendary","Rare","Uncommon","Common"}
+local RarityLabel = {
+    Super="— SUPER", Mythic="— MYTHIC", Legendary="— LEGENDARY",
+    Rare="— RARE", Uncommon="— UNCOMMON", Common="— COMMON",
+}
+
+local Scroll = Instance.new("ScrollingFrame", Body)
+Scroll.Size=UDim2.new(1,-24,1,-196); Scroll.Position=UDim2.new(0,12,0,192)
+Scroll.BackgroundTransparency=1; Scroll.BorderSizePixel=0
+Scroll.ScrollBarThickness=2; Scroll.ScrollBarImageColor3=C.BORDER
+Scroll.ScrollingDirection=Enum.ScrollingDirection.Y
+
+local ListLayout = Instance.new("UIListLayout", Scroll)
+ListLayout.SortOrder=Enum.SortOrder.LayoutOrder; ListLayout.Padding=UDim.new(0,3)
+
+local CekDanAturVisibilityRadar
+local layoutIdx = 0
+
+-- Render pet list dengan section header rarity
+local lastRarity = ""
+for idx, namaPet in ipairs(ListSemuaPet) do
+    local rarity = PetRarity[namaPet] or "Common"
+    local rCol   = RarityColor[rarity] or C.TEXT_2
+
+    -- Tambah section header jika rarity baru
+    if rarity ~= lastRarity then
+        lastRarity = rarity
+        layoutIdx += 1
+        local SHdr = Instance.new("TextLabel", Scroll)
+        SHdr.LayoutOrder=layoutIdx
+        SHdr.Size=UDim2.new(1,0,0,16)
+        SHdr.BackgroundTransparency=1
+        SHdr.Text=RarityLabel[rarity] or rarity
+        SHdr.TextColor3=rCol
+        SHdr.Font=Enum.Font.GothamBold
+        SHdr.TextSize=7.5
+        SHdr.TextXAlignment=Enum.TextXAlignment.Left
+    end
+
+    layoutIdx += 1
+    local isTarget = Config.Targets[namaPet] or false
+
+    local Row = Instance.new("TextButton", Scroll)
+    Row.LayoutOrder=layoutIdx
+    Row.Size=UDim2.new(1,0,0,28)
+    Row.BackgroundColor3=isTarget and C.ELEVATED or C.SURFACE
+    Row.BorderSizePixel=0; Row.Text=""; Row.AutoButtonColor=false
+    Corner(Row, 5)
+    local RS = Stroke(Row, isTarget and C.ACCENT_D or C.BORDER)
+
+    local Dot = Instance.new("Frame", Row)
+    Dot.Size=UDim2.new(0,5,0,5); Dot.Position=UDim2.new(0,9,0.5,-2.5)
+    Dot.BackgroundColor3=isTarget and rCol or C.TEXT_3
+    Dot.BorderSizePixel=0; Corner(Dot, 3)
+
+    local NLbl = Instance.new("TextLabel", Row)
+    NLbl.Size=UDim2.new(1,-50,1,0); NLbl.Position=UDim2.new(0,20,0,0)
+    NLbl.BackgroundTransparency=1; NLbl.Text=namaPet
+    NLbl.TextColor3=isTarget and C.TEXT_1 or C.TEXT_2
+    NLbl.Font=Enum.Font.GothamMedium; NLbl.TextSize=9
+    NLbl.TextXAlignment=Enum.TextXAlignment.Left
+
+    local RarLbl = Instance.new("TextLabel", Row)
+    RarLbl.Size=UDim2.new(0,56,1,0); RarLbl.Position=UDim2.new(1,-60,0,0)
+    RarLbl.BackgroundTransparency=1; RarLbl.Text=rarity
+    RarLbl.TextColor3=isTarget and rCol or C.TEXT_3
+    RarLbl.Font=Enum.Font.Gotham; RarLbl.TextSize=7.5
+    RarLbl.TextXAlignment=Enum.TextXAlignment.Right
+
+    Row.MouseButton1Click:Connect(function()
+        Config.Targets[namaPet] = not (Config.Targets[namaPet] or false); SaveConfig()
+        local on = Config.Targets[namaPet]
+        TweenService:Create(Row, TweenInfo.new(0.1), {BackgroundColor3=on and C.ELEVATED or C.SURFACE}):Play()
+        RS.Color=on and C.ACCENT_D or C.BORDER
+        Dot.BackgroundColor3=on and rCol or C.TEXT_3
+        NLbl.TextColor3=on and C.TEXT_1 or C.TEXT_2
+        RarLbl.TextColor3=on and rCol or C.TEXT_3
+        if on and Config.AutoBuy then
+            local Map=workspace:FindFirstChild("Map")
+            local PF=Map and Map:FindFirstChild("WildPetSpawns")
+            if PF then for _,o in ipairs(PF:GetDescendants()) do CekPetLokal(o) end end
+        end
+        if CekDanAturVisibilityRadar then CekDanAturVisibilityRadar() end
+    end)
+end
+-- Hitung tinggi canvas: pet rows + section headers
+local totalPet = #ListSemuaPet
+local totalSections = 6  -- 6 rarity groups
+Scroll.CanvasSize = UDim2.new(0,0,0, totalPet*31 + totalSections*19)
+
+-- ============================================================
+-- RADAR PANEL
+-- ============================================================
+local Radar = Instance.new("Frame", Root)
+Radar.Size=UDim2.new(0,258,0,80); Radar.Position=UDim2.new(1,8,0,0)
+Radar.BackgroundColor3=C.BASE; Radar.BorderSizePixel=0
+Radar.ClipsDescendants=true; Radar.Visible=false
+Corner(Radar, 8); Stroke(Radar, C.BORDER)
+
+local RHeader = Instance.new("Frame", Radar)
+RHeader.Size=UDim2.new(1,0,0,38); RHeader.BackgroundColor3=C.SURFACE; RHeader.BorderSizePixel=0
+Corner(RHeader, 8)
+local RHFix=Instance.new("Frame",RHeader)
+RHFix.Size=UDim2.new(1,0,0,8); RHFix.Position=UDim2.new(0,0,1,-8)
+RHFix.BackgroundColor3=C.SURFACE; RHFix.BorderSizePixel=0
+
+local RAL=Instance.new("Frame",RHeader)
+RAL.Size=UDim2.new(0,28,0,2); RAL.Position=UDim2.new(0,12,0,0)
+RAL.BackgroundColor3=C.AMBER; RAL.BorderSizePixel=0; Corner(RAL,1)
+
+local RTitleLbl=Instance.new("TextLabel",RHeader)
+RTitleLbl.Size=UDim2.new(1,-80,1,0); RTitleLbl.Position=UDim2.new(0,12,0,0)
+RTitleLbl.BackgroundTransparency=1; RTitleLbl.Text="Live Radar"
+RTitleLbl.TextColor3=C.TEXT_1; RTitleLbl.Font=Enum.Font.GothamBold
+RTitleLbl.TextSize=11; RTitleLbl.TextXAlignment=Enum.TextXAlignment.Left
+
+local LiveDot=Instance.new("Frame",RHeader)
+LiveDot.Size=UDim2.new(0,6,0,6); LiveDot.Position=UDim2.new(1,-20,0.5,-3)
+LiveDot.BackgroundColor3=C.ACCENT; LiveDot.BorderSizePixel=0; Corner(LiveDot,3)
+
+local RScroll=Instance.new("ScrollingFrame",Radar)
+RScroll.Size=UDim2.new(1,-12,1,-46); RScroll.Position=UDim2.new(0,6,0,42)
+RScroll.BackgroundTransparency=1; RScroll.BorderSizePixel=0
+RScroll.ScrollBarThickness=1; RScroll.ScrollBarImageColor3=C.BORDER
+local RLayout=Instance.new("UIListLayout",RScroll)
+RLayout.SortOrder=Enum.SortOrder.LayoutOrder; RLayout.Padding=UDim.new(0,2)
+
+CekDanAturVisibilityRadar = function()
+    local ada=false
+    for _,v in pairs(Config.Targets) do if v==true then ada=true break end end
+    Radar.Visible=ada
+end
+CekDanAturVisibilityRadar()
+
+local function AmbilDataFirebase()
+    local httpFunc=HttpRequest or request or (syn and syn.request) or http_request or nil
+    if not httpFunc then return nil end
+    local ok,res=pcall(function() return httpFunc({Url=FirebaseURL.."LivePets.json",Method="GET"}) end)
+    if ok and res and res.Body then
+        local okD,data=pcall(function() return HttpService:JSONDecode(res.Body) end)
+        if okD and type(data)=="table" then return data end
+    end
+    return nil
+end
+
+local function RenderRadar()
+    CekDanAturVisibilityRadar()
+    for _,c in ipairs(RScroll:GetChildren()) do if not c:IsA("UIListLayout") then c:Destroy() end end
+    if not Radar.Visible then return end
+
+    local db=AmbilDataFirebase() or {}
+    local selectedPets={}
+    for _,name in ipairs(ListSemuaPet) do if Config.Targets[name]==true then table.insert(selectedPets,name) end end
+
+    local orderIdx=1; local hopQueue={}; local totalRows=0
+
+    for _,petName in ipairs(selectedPets) do
+        local rarity=PetRarity[petName] or "Common"
+        local rCol=RarityColor[rarity] or C.TEXT_2
+
+        local PH=Instance.new("Frame",RScroll)
+        PH.Size=UDim2.new(1,0,0,20); PH.BackgroundTransparency=1; PH.LayoutOrder=orderIdx; orderIdx+=1; totalRows+=1
+
+        local PHDot=Instance.new("Frame",PH)
+        PHDot.Size=UDim2.new(0,5,0,5); PHDot.Position=UDim2.new(0,2,0.5,-2.5)
+        PHDot.BackgroundColor3=rCol; PHDot.BorderSizePixel=0; Corner(PHDot,3)
+
+        local PHT=Instance.new("TextLabel",PH)
+        PHT.Size=UDim2.new(1,-10,1,0); PHT.Position=UDim2.new(0,12,0,0)
+        PHT.BackgroundTransparency=1; PHT.Font=Enum.Font.GothamBold; PHT.TextSize=9
+        PHT.TextXAlignment=Enum.TextXAlignment.Left; PHT.Text=petName; PHT.TextColor3=rCol
+
+        local srvList={}
+        for jobId,srvData in pairs(db) do
+            if type(srvData)=="table" and srvData[petName] then
+                local info=srvData[petName]
+                table.insert(srvList,{JobId=jobId,Players=info.CurrentPlayers or 0,MaxPlayers=info.MaxPlayers or 12,Timestamp=info.Timestamp or os.time()})
+            end
+        end
+        table.sort(srvList,function(a,b) return a.Timestamp<b.Timestamp end)
+
+        if #srvList==0 then
+            local NS=Instance.new("Frame",RScroll)
+            NS.Size=UDim2.new(1,0,0,16); NS.BackgroundTransparency=1; NS.LayoutOrder=orderIdx; orderIdx+=1; totalRows+=0.8
+            local NT=Instance.new("TextLabel",NS)
+            NT.Size=UDim2.new(1,0,1,0); NT.Position=UDim2.new(0,12,0,0); NT.BackgroundTransparency=1
+            NT.Font=Enum.Font.Gotham; NT.TextSize=8; NT.TextColor3=C.TEXT_3
+            NT.TextXAlignment=Enum.TextXAlignment.Left; NT.Text="Tidak ada server ditemukan"
+        else
+            for _,srv in ipairs(srvList) do
+                local R=Instance.new("TextButton",RScroll)
+                R.Size=UDim2.new(1,0,0,22); R.BackgroundColor3=C.SURFACE
+                R.BorderSizePixel=0; R.Text=""; R.LayoutOrder=orderIdx; orderIdx+=1; totalRows+=1.1
+                Corner(R,4); Stroke(R,C.DIVIDER)
+
+                local DL=Instance.new("TextLabel",R)
+                DL.Size=UDim2.new(0,140,1,0); DL.Position=UDim2.new(0,10,0,0)
+                DL.BackgroundTransparency=1; DL.Font=Enum.Font.Gotham; DL.TextSize=8; DL.TextColor3=C.TEXT_1
+                DL.Text=string.sub(srv.JobId,1,8).."…  "..srv.Players.."/"..srv.MaxPlayers
+
+                local AgeLbl=Instance.new("TextLabel",R)
+                AgeLbl.Size=UDim2.new(0,40,1,0); AgeLbl.Position=UDim2.new(0,148,0,0)
+                AgeLbl.BackgroundTransparency=1; AgeLbl.Font=Enum.Font.Gotham; AgeLbl.TextSize=8
+                AgeLbl.TextColor3=C.TEXT_3; AgeLbl.Text=(os.time()-srv.Timestamp).."s"
+
+                local JoinBtn=Instance.new("TextLabel",R)
+                JoinBtn.Size=UDim2.new(0,38,0,16); JoinBtn.Position=UDim2.new(1,-42,0.5,-8)
+                JoinBtn.BackgroundColor3=C.ELEVATED; JoinBtn.BorderSizePixel=0
+                JoinBtn.Font=Enum.Font.GothamBold; JoinBtn.TextSize=8
+                JoinBtn.TextColor3=C.ACCENT; JoinBtn.Text="JOIN"; Corner(JoinBtn,3)
+
+                R.MouseButton1Click:Connect(function()
+                    if srv.Players>=srv.MaxPlayers then SetStatus("Server penuh",C.DANGER,C.DANGER) return end
+                    SetStatus("Teleporting...",C.AMBER,C.AMBER)
+                    TeleportService:TeleportToPlaceInstance(game.PlaceId,srv.JobId,LocalPlayer)
+                end)
+                if srv.JobId~=game.JobId and srv.Players<srv.MaxPlayers then table.insert(hopQueue,srv) end
+            end
+        end
+
+        local Sp=Instance.new("Frame",RScroll)
+        Sp.Size=UDim2.new(1,0,0,4); Sp.BackgroundTransparency=1; Sp.LayoutOrder=orderIdx; orderIdx+=1
+    end
+
+    RScroll.CanvasSize=UDim2.new(0,0,0,orderIdx*18)
+    local newH=math.clamp(46+(totalRows*22),80,420)
+    TweenService:Create(Radar,TweenInfo.new(0.2,Enum.EasingStyle.Quad),{Size=UDim2.new(0,258,0,newH)}):Play()
+
+    if Config.AutoHop and #hopQueue>0 and not sedangMemproses then
+        table.sort(hopQueue,function(a,b) return a.Timestamp<b.Timestamp end)
+        local t=hopQueue[1]
+        SetStatus("Auto Hop → "..string.sub(t.JobId,1,8).."…",C.AMBER,C.AMBER)
+        -- TIDAK matikan AutoHop & TIDAK SaveConfig di sini
+        -- Biar tetap true saat masuk server baru
+        task.wait(0.5)
+        TeleportService:TeleportToPlaceInstance(game.PlaceId,t.JobId,LocalPlayer)
+    end
+end
+
+task.spawn(function()
+    -- Delay 3 detik pertama biar game siap dulu sebelum radar scan
+    task.wait(3)
+    while true do
+        pcall(RenderRadar)
+        task.wait(3)
+    end
+end)
+
+task.spawn(function() while task.wait(3) do pcall(RenderRadar) end end)
+
+-- ============================================================
+-- ENGINE BUY — PERSIS DARI V3 YANG PROVEN WORKING
+-- Tidak diubah sama sekali agar tidak ada bug baru
+-- ============================================================
+local function MulaiBuyLoop(petModel, targetName, petKey)
+    local char=LocalPlayer.Character
+    local root=char and char:FindFirstChild("HumanoidRootPart")
+    if not root then sedangMemproses=false return end
+
+    local part=petModel:IsA("BasePart") and petModel
+        or petModel:FindFirstChildWhichIsA("BasePart",true) or petModel.PrimaryPart
+    if not part then sedangMemproses=false return end
+
+    local prompt=petModel:FindFirstChild("BuyPrompt",true)
+    if not prompt and petModel.Parent then prompt=petModel.Parent:FindFirstChild("BuyPrompt",true) end
+    if not prompt then sedangMemproses=false return end
+
+    local t0=os.clock(); local berhasil=false; local TIMEOUT=60
+    pcall(function() prompt.HoldDuration=0 end)
+
+    -- Thread pengawas: pet lenyap dari workspace = berhasil dibeli
+    task.spawn(function()
+        while not berhasil and (os.clock()-t0)<TIMEOUT do
+            task.wait(0.01)
+            if not petModel or not petModel.Parent or not petModel:IsDescendantOf(workspace) then
+                berhasil=true
+            end
+        end
+    end)
+
+    -- Glue: karakter nempel ke pet tiap frame
+    local Glue
+    Glue=RunService.Heartbeat:Connect(function()
+        if not petModel or not petModel.Parent or not petModel:IsDescendantOf(workspace)
+        or berhasil or not Config.AutoBuy then
+            if Glue then Glue:Disconnect(); Glue=nil end; return
+        end
+        local lp=petModel:IsA("BasePart") and petModel
+            or petModel:FindFirstChildWhichIsA("BasePart",true) or petModel.PrimaryPart
+        local lpr=petModel:FindFirstChild("BuyPrompt",true) or prompt
+        if lp and root and lpr then
+            root.CFrame=CFrame.new(lp.Position+Vector3.new(0,0.1,0.3),lp.Position)
+            root.Velocity=Vector3.new(0,0,0)
+            if lpr.HoldDuration~=0 then pcall(function() lpr.HoldDuration=0 end) end
+        end
+    end)
+
+    -- Spam klik
+    task.spawn(function()
+        task.wait(0.05)
+        while not berhasil and Config.AutoBuy and petModel and petModel:IsDescendantOf(workspace) do
+            local lpr=petModel:FindFirstChild("BuyPrompt",true) or prompt
+            if lpr then
+                pcall(function()
+                    if fireproximityprompt then fireproximityprompt(lpr)
+                    else lpr:InputHoldBegin(); task.wait(0.01); lpr:InputHoldEnd() end
+                end)
+                pcall(function()
+                    local VU=game:GetService("VirtualUser")
+                    VU:ClickButton1(Vector2.new(
+                        workspace.CurrentCamera.ViewportSize.X/2,
+                        workspace.CurrentCamera.ViewportSize.Y/2
+                    ))
+                end)
+            end
+            task.wait(0.08)
+        end
+    end)
+
+    while os.clock()-t0<TIMEOUT and not berhasil and Config.AutoBuy do task.wait(0.05) end
+    if Glue then Glue:Disconnect(); Glue=nil end
+
+    if berhasil then
+        SetStatus("✓ "..targetName.." berhasil!", C.ACCENT, C.ACCENT)
+        task.spawn(function() KirimNotifDiscord(targetName, true) end)
+        PetSudahDibeli[petKey]=true
+    else
+        SetStatus("✕ "..targetName.." timeout", C.DANGER, C.DANGER)
+        task.spawn(function() KirimNotifDiscord(targetName, false) end)
+        PetSudahDibeli[petKey]=nil
+    end
+    sedangMemproses=false
+end
+
+-- ============================================================
+-- DETECTOR
+-- Anti Steal ON  = agresif (curi pet orang lain juga)
+-- Anti Steal OFF = hemat (skip jika BuyPrompt disabled)
+-- ============================================================
+CekPetLokal = function(item)
+    if not item or not item.Parent or sedangMemproses or not Config.AutoBuy then return end
+    local nl=item.Name:lower(); local tv=nil
+    for tName,aktif in pairs(Config.Targets) do
+        if aktif and string.find(nl,tName:lower()) then tv=tName break end
+    end
+    if not tv then return end
+
+    local petModel=item:IsA("Model") and item or item.Parent
+    if not petModel or not petModel:IsA("Model") then return end
+
+    local bp=petModel:FindFirstChild("BuyPrompt",true)
+    if not bp then return end
+
+    if not Config.AntiSteal and not bp.Enabled then
+        SetStatus("Skip — sudah dibeli orang lain", C.TEXT_3, C.TEXT_3)
+        return
+    end
+
+    local petKey=tostring(petModel).."_"..tv
+    if PetSudahDibeli[petKey] then return end
+
+    PetSudahDibeli[petKey]=true; sedangMemproses=true
+    SetStatus("⬤ "..tv.." terdeteksi...", C.ACCENT, C.ACCENT)
+    task.spawn(function() MulaiBuyLoop(petModel, tv, petKey) end)
+end
+
+task.spawn(function()
+    local Map=workspace:WaitForChild("Map",15)
+    local PF=Map and Map:WaitForChild("WildPetSpawns",15)
+    if not PF then return end
+    local function Hook(obj)
+        if (obj:IsA("Model") or obj:IsA("BasePart")) and obj:IsDescendantOf(PF) then
+            CekPetLokal(obj)
+        end
+    end
+    for _,o in ipairs(PF:GetDescendants()) do Hook(o) end
+    PF.DescendantAdded:Connect(Hook)
+end)
+
+print("[DScripts PetFinder V5.0] by dimsgti — Loaded ✔")
+print("[V5] Engine beli: V3 proven | Bear: Mythic | Urutan: by rarity | Anti lag: aman")
