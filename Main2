@@ -193,7 +193,7 @@ local ConfigFile          = "DscriptsPetFinderV5.json"
 local GambarPet = {
     ["Frog"]           = "https://static.wikia.nocookie.net/growagarden27847/images/7/7e/FrogNoBackground.png/revision/latest?cb=20260612231916",
     ["Bunny"]          = "https://static.wikia.nocookie.net/growagarden27847/images/2/26/BunnyNoBackground.png/revision/latest?cb=20260612231929",
-    ["Bear"]           = "https://static.wikia.nocookie.net/growagarden27847/images/thumb/5/5e/Bear.png/250px-Bear.png",
+    ["Bear"]           = "https://static.wikia.nocookie.net/growagarden27847/images/a/a4/Bear.png/revision/latest?cb=20260619225420",
     ["Owl"]            = "https://static.wikia.nocookie.net/growagarden27847/images/5/5c/Owl.png/revision/latest?cb=20260612231816",
     ["Deer"]           = "https://static.wikia.nocookie.net/growagarden27847/images/2/27/Deer.png/revision/latest?cb=20260612231816",
     ["Robin"]          = "https://static.wikia.nocookie.net/growagarden27847/images/1/1b/Robin.png/revision/latest?cb=20260612231816",
