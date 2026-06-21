@@ -287,7 +287,7 @@ end
 LoadConfig()
 
 -- ============================================================
--- DISCORD WEBHOOK (Bawaan Script Penangkap Utama)
+-- DISCORD WEBHOOK
 -- ============================================================
 local function KirimNotifDiscord(namaPet, sukses)
     local httpFunc = HttpRequest or request or (syn and syn.request) or http_request or nil
@@ -300,7 +300,7 @@ local function KirimNotifDiscord(namaPet, sukses)
     local rarity = PetRarity[namaPet] or "Common"
     local baris = {
         emoji .. " **" .. namaPet .. "** `[" .. rarity .. "]`",
-        **Status:** " .. (sukses and "✅ Masuk ke storage" or "❌ Timeout / Gagal"),
+        "**Status:** " .. (sukses and "✅ Masuk ke storage" or "❌ Timeout / Gagal"),
         "**Server:** `" .. tostring(game.JobId) .. "`",
         "**Waktu:** <t:" .. os.time() .. ":R>",
     }
@@ -319,37 +319,8 @@ local function KirimNotifDiscord(namaPet, sukses)
     pcall(function()
         httpFunc({ Url=DISCORD_WEBHOOK_URL, Method="POST", Headers={["Content-Type"]="application/json"}, Body=payload })
     end)
-
-    -- [OTOMATISASI]: Jika pet sukses ditangkap, langsung pemicu tambah stock ke Firebase di bawah ini!
-    if sukses then
-        task.spawn(function()
-            -- Menggunakan task.spawn agar jika koneksi database delay, tidak memperlambat script utama penangkap
-            if typeof(_G.TambahStockFirebase) == "function" then
-                _G.TambahStockFirebase(namaPet)
-            else
-                -- Jika fungsi belum terdaftar global, panggil lokal alternatif
-                pcall(function()
-                    local petClean = string.gsub(namaPet, "^%s*(.-)%s*$", "%1")
-                    petClean = petClean:sub(1,1):upper() .. petClean:sub(2):lower()
-                    local targetUrl = "https://growagardenpetfinder-default-rtdb.asia-southeast1.firebasedatabase.app/TotalStock/"..petClean..".json"
-                    local dataLama = game:HttpGet(targetUrl)
-                    local jumlahLama = 0
-                    if dataLama and dataLama ~= "null" then jumlahLama = tonumber(dataLama) or 0 end
-                    local jumlahBaru = jumlahLama + 1
-                    if httpFunc then
-                        httpFunc({
-                            Url     = targetUrl,
-                            Method  = "PUT",
-                            Headers = { ["Content-Type"] = "application/json" },
-                            Body    = HttpService:JSONEncode(jumlahBaru),
-                        })
-                        print("[Stock System] Otomatis menambah stock " .. petClean .. " menjadi " .. tostring(jumlahBaru))
-                    end
-                end)
-            end
-        end)
-    end
 end
+
 
 -- ============================================================
 -- STOCK MANAGEMENT SYSTEM (FIREBASE AUTO-INCREMENT STANDALONE)
